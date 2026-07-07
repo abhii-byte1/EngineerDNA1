@@ -1,0 +1,1 @@
+- [EngineerDNA architecture](engineer-dna-arch.md) — auth, AI, DB, route patterns for the 6-module engineering growth platform

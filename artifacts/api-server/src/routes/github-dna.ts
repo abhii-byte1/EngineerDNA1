@@ -1,0 +1,149 @@
+import { Router } from "express";
+import { db } from "@workspace/db";
+import { githubReportsTable } from "@workspace/db";
+import { eq, desc } from "drizzle-orm";
+import { requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
+import { openai } from "../lib/ai";
+
+const router = Router();
+
+// POST /api/github-dna/analyze
+router.post("/analyze", requireAuth, async (req, res) => {
+  const { user } = req as AuthenticatedRequest;
+  const { githubUsername } = req.body as { githubUsername: string };
+
+  if (!githubUsername?.trim()) {
+    res.status(400).json({ error: "githubUsername is required" });
+    return;
+  }
+
+  const [report] = await db
+    .insert(githubReportsTable)
+    .values({ userId: user.id, githubUsername: githubUsername.trim(), status: "analyzing" })
+    .returning();
+
+  try {
+    const [userRes, reposRes] = await Promise.all([
+      fetch(`https://api.github.com/users/${githubUsername}`, { headers: { "User-Agent": "EngineerDNA/1.0" } }),
+      fetch(`https://api.github.com/users/${githubUsername}/repos?per_page=50&sort=updated`, { headers: { "User-Agent": "EngineerDNA/1.0" } }),
+    ]);
+
+    if (!userRes.ok) {
+      await db.update(githubReportsTable).set({ status: "failed" }).where(eq(githubReportsTable.id, report.id));
+      res.status(404).json({ error: "GitHub user not found" });
+      return;
+    }
+
+    const ghUser = (await userRes.json()) as Record<string, unknown>;
+    const repos = (reposRes.ok ? await reposRes.json() : []) as Record<string, unknown>[];
+
+    const repoSummary = repos.slice(0, 25).map((r) => ({
+      name: r.name,
+      language: r.language,
+      stars: r.stargazers_count,
+      forked: r.fork,
+      description: r.description,
+      topics: r.topics,
+      size: r.size,
+      updated: r.updated_at,
+    }));
+
+    const langCounts: Record<string, number> = {};
+    for (const r of repos) {
+      if (r.language) langCounts[r.language as string] = (langCounts[r.language as string] ?? 0) + 1;
+    }
+    const topLanguages = Object.entries(langCounts).sort((a, b) => b[1] - a[1]).map(([l]) => l).slice(0, 10);
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: "You are a brutally honest, expert engineering career coach. You analyze GitHub profiles with surgical precision to identify strengths, weaknesses, and growth opportunities. Be specific — reference actual repo names, languages, and patterns. Never be generic.",
+        },
+        {
+          role: "user",
+          content: `Analyze this GitHub profile and return a JSON engineering assessment.
+
+GitHub Profile: ${JSON.stringify(ghUser)}
+Repositories (most recent 25): ${JSON.stringify(repoSummary)}
+Top Languages: ${topLanguages.join(", ")}
+
+Return ONLY valid JSON with this exact structure:
+{
+  "overallScore": <0-100 integer>,
+  "strengths": [<3-6 specific strengths>],
+  "weaknesses": [<3-6 specific weaknesses or gaps>],
+  "techStack": [<detected tech stack items>],
+  "architectureIssues": [<2-5 architecture/code quality concerns>],
+  "recommendations": [<4-6 actionable specific recommendations>],
+  "growthAreas": [<3-5 high-impact growth opportunities>],
+  "insights": [
+    {
+      "observation": "<what you observed>",
+      "evidence": "<specific evidence from repos>",
+      "reason": "<why this matters for career growth>",
+      "impact": "<impact if unaddressed>",
+      "actionPlan": "<concrete steps to fix>",
+      "priority": "<critical|high|medium|low>",
+      "estimatedImprovement": "<expected improvement if addressed>"
+    }
+  ]
+}`,
+        },
+      ],
+      response_format: { type: "json_object" },
+    });
+
+    const analysis = JSON.parse(completion.choices[0].message.content ?? "{}") as Record<string, unknown>;
+
+    const [updated] = await db
+      .update(githubReportsTable)
+      .set({
+        status: "completed",
+        overallScore: analysis.overallScore as number,
+        strengths: (analysis.strengths as string[]) ?? [],
+        weaknesses: (analysis.weaknesses as string[]) ?? [],
+        techStack: (analysis.techStack as string[]) ?? [],
+        totalRepositories: ghUser.public_repos as number,
+        topLanguages,
+        insights: (analysis.insights as import("../../../../lib/db/src/schema/github-reports").AnalysisInsight[]) ?? [],
+        architectureIssues: (analysis.architectureIssues as string[]) ?? [],
+        recommendations: (analysis.recommendations as string[]) ?? [],
+        growthAreas: (analysis.growthAreas as string[]) ?? [],
+      })
+      .where(eq(githubReportsTable.id, report.id))
+      .returning();
+
+    res.json(JSON.parse(JSON.stringify(updated)));
+  } catch (err) {
+    console.error("[github-dna] analysis error:", err);
+    await db.update(githubReportsTable).set({ status: "failed" }).where(eq(githubReportsTable.id, report.id));
+    res.status(500).json({ error: "Analysis failed", details: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+// GET /api/github-dna/reports
+router.get("/reports", requireAuth, async (req, res) => {
+  const { user } = req as AuthenticatedRequest;
+  const reports = await db
+    .select()
+    .from(githubReportsTable)
+    .where(eq(githubReportsTable.userId, user.id))
+    .orderBy(desc(githubReportsTable.createdAt));
+  res.json(JSON.parse(JSON.stringify(reports)));
+});
+
+// GET /api/github-dna/reports/:id
+router.get("/reports/:id", requireAuth, async (req, res) => {
+  const { user } = req as AuthenticatedRequest;
+  const id = parseInt(req.params.id as string, 10);
+  const [report] = await db.select().from(githubReportsTable).where(eq(githubReportsTable.id, id)).limit(1);
+  if (!report || report.userId !== user.id) {
+    res.status(404).json({ error: "Report not found" });
+    return;
+  }
+  res.json(JSON.parse(JSON.stringify(report)));
+});
+
+export default router;

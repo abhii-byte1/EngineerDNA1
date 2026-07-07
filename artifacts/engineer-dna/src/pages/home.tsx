@@ -1,7 +1,7 @@
 import * as React from "react"
 import { Link } from "wouter"
 import { motion } from "framer-motion"
-import { ArrowRight, Code2, Database, GitBranch, Github, Layers, Terminal, Zap } from "lucide-react"
+import { ArrowRight, BookOpen, Code2, Database, FileText, GitBranch, Github, Globe, Layers, Map as MapIcon, MessageSquare, Terminal, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 import heroDnaImage from "@assets/generated_images/hero-dna.jpg"
@@ -134,7 +134,7 @@ export default function Home() {
               command="$ analyze --source=text"
             />
             <ModuleCard 
-              icon={<Map className="text-primary" />}
+              icon={<MapIcon className="text-primary" />}
               title="Engineering Roadmap"
               description="AI-generated week-by-week goals based on your gaps and target role."
               command="$ generate --type=roadmap"

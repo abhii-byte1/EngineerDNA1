@@ -1,45 +1,50 @@
-# [Project name]
+# EngineerDNA
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+An AI-powered Engineering Growth Platform that answers real developer growth questions: why am I not growing? what skills am I missing? how close am I to SDE-1?
 
-## Run & Operate
+**Not** a resume builder, ATS checker, or job tracker. A weekly growth companion for engineers who are obsessive about their craft.
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+## Architecture
 
-## Stack
+### Monorepo structure
+- `artifacts/engineer-dna/` — React + Vite frontend (wouter routing, dark-mode first)
+- `artifacts/api-server/` — Express 5 API server (port from $PORT env var)
+- `lib/db/` — Drizzle ORM + PostgreSQL schema
+- `lib/api-spec/` — OpenAPI spec (source of truth)
+- `lib/api-client-react/` — Orval-generated React Query hooks
+- `lib/api-zod/` — Orval-generated Zod schemas
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+### Workflows
+- `artifacts/api-server: API Server` — runs the backend
+- `artifacts/engineer-dna: web` — runs the frontend
 
-## Where things live
+### Auth
+- GitHub OAuth (GITHUB_CLIENT_ID + GITHUB_CLIENT_SECRET secrets required)
+- Session tokens stored in `sessions` DB table, session_token httpOnly cookie
+- Dev login at `GET /api/auth/dev-login` for local development
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+### AI
+- Uses OpenAI directly via OPENAI_API_KEY (user-provided secret)
+- Model: gpt-4o-mini with JSON output mode for all analysis
 
-## Architecture decisions
+### Database
+- Replit PostgreSQL (DATABASE_URL auto-provisioned)
+- After schema changes: `pnpm --filter @workspace/db run push`
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+## Modules
+1. **GitHub DNA** — Analyzes real GitHub repos via public API + GPT
+2. **Portfolio DNA** — Analyzes portfolio website URL
+3. **Resume DNA** — Analyzes pasted resume text
+4. **Roadmap** — AI-generated week-by-week engineering growth plan
+5. **Journal** — Weekly growth journal with AI mentor insights
+6. **AI Mentor** — Conversational engineering coach
 
-## Product
+## Required Secrets
+- `OPENAI_API_KEY` — for all AI features
+- `GITHUB_CLIENT_ID` — for GitHub OAuth login
+- `GITHUB_CLIENT_SECRET` — for GitHub OAuth login
+- `SESSION_SECRET` — already provisioned
 
-_Describe the high-level user-facing capabilities of this app once they exist._
-
-## User preferences
-
-_Populate as you build — explicit user instructions worth remembering across sessions._
-
-## Gotchas
-
-_Populate as you build — sharp edges, "always run X before Y" rules._
-
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+## User Preferences
+- No placeholder/mock data — all endpoints use real data sources
+- Explicit errors instead of silent fallbacks
