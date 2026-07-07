@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "EngineerDNA"
+version = "1.0.0"
+id = "artifacts/engineer-dna"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 26217
+
+[services.development]
+run = "pnpm --filter @workspace/engineer-dna run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/engineer-dna", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/engineer-dna/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "26217"
+BASE_PATH = "/"

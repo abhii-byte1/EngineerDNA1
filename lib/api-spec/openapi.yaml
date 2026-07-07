@@ -3,20 +3,40 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: EngineerDNA API - AI-powered Engineering Growth Platform
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: users
+    description: User profile operations
+  - name: github-dna
+    description: GitHub repository analysis
+  - name: portfolio-dna
+    description: Portfolio website analysis
+  - name: resume-dna
+    description: Resume analysis
+  - name: roadmap
+    description: Engineering roadmap
+  - name: journal
+    description: Growth journal
+  - name: mentor
+    description: AI engineering mentor
+  - name: goals
+    description: Engineering goals
+  - name: dashboard
+    description: Dashboard summary
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +44,586 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get authenticated user
+      responses:
+        "200":
+          description: Authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout user
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /users/profile:
+    get:
+      operationId: getUserProfile
+      tags: [users]
+      summary: Get current user profile
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateUserProfile
+      tags: [users]
+      summary: Update user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserProfileInput"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  /github-dna/analyze:
+    post:
+      operationId: analyzeGithub
+      tags: [github-dna]
+      summary: Analyze GitHub profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GithubAnalysisInput"
+      responses:
+        "201":
+          description: Analysis started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GithubReport"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /github-dna/reports:
+    get:
+      operationId: listGithubReports
+      tags: [github-dna]
+      summary: List GitHub analysis reports
+      responses:
+        "200":
+          description: List of reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GithubReport"
+
+  /github-dna/reports/{id}:
+    get:
+      operationId: getGithubReport
+      tags: [github-dna]
+      summary: Get a GitHub analysis report
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GithubReport"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /portfolio-dna/analyze:
+    post:
+      operationId: analyzePortfolio
+      tags: [portfolio-dna]
+      summary: Analyze portfolio website
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PortfolioAnalysisInput"
+      responses:
+        "201":
+          description: Analysis report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioReport"
+
+  /portfolio-dna/reports:
+    get:
+      operationId: listPortfolioReports
+      tags: [portfolio-dna]
+      summary: List portfolio analysis reports
+      responses:
+        "200":
+          description: List of reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PortfolioReport"
+
+  /portfolio-dna/reports/{id}:
+    get:
+      operationId: getPortfolioReport
+      tags: [portfolio-dna]
+      summary: Get a portfolio analysis report
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioReport"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /resume-dna/analyze:
+    post:
+      operationId: analyzeResume
+      tags: [resume-dna]
+      summary: Analyze resume
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResumeAnalysisInput"
+      responses:
+        "201":
+          description: Analysis report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResumeReport"
+
+  /resume-dna/reports:
+    get:
+      operationId: listResumeReports
+      tags: [resume-dna]
+      summary: List resume analysis reports
+      responses:
+        "200":
+          description: List of reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ResumeReport"
+
+  /resume-dna/reports/{id}:
+    get:
+      operationId: getResumeReport
+      tags: [resume-dna]
+      summary: Get a resume analysis report
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResumeReport"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /roadmap:
+    get:
+      operationId: getRoadmap
+      tags: [roadmap]
+      summary: Get current roadmap
+      responses:
+        "200":
+          description: Roadmap
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Roadmap"
+        "404":
+          description: No roadmap yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: generateRoadmap
+      tags: [roadmap]
+      summary: Generate personalized roadmap
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoadmapInput"
+      responses:
+        "201":
+          description: Generated roadmap
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Roadmap"
+
+  /roadmap/milestones/{milestoneId}:
+    patch:
+      operationId: updateMilestone
+      tags: [roadmap]
+      summary: Update milestone completion status
+      parameters:
+        - name: milestoneId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MilestoneUpdate"
+      responses:
+        "200":
+          description: Updated milestone
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Milestone"
+
+  /journal/entries:
+    get:
+      operationId: listJournalEntries
+      tags: [journal]
+      summary: List journal entries
+      responses:
+        "200":
+          description: List of entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/JournalEntry"
+    post:
+      operationId: createJournalEntry
+      tags: [journal]
+      summary: Create journal entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JournalEntryInput"
+      responses:
+        "201":
+          description: Created entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JournalEntry"
+
+  /journal/entries/{id}:
+    get:
+      operationId: getJournalEntry
+      tags: [journal]
+      summary: Get a journal entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JournalEntry"
+    patch:
+      operationId: updateJournalEntry
+      tags: [journal]
+      summary: Update a journal entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JournalEntryUpdate"
+      responses:
+        "200":
+          description: Updated entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JournalEntry"
+    delete:
+      operationId: deleteJournalEntry
+      tags: [journal]
+      summary: Delete a journal entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /journal/monthly-report:
+    get:
+      operationId: getMonthlyReport
+      tags: [journal]
+      summary: Get monthly growth report
+      responses:
+        "200":
+          description: Monthly report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MonthlyReport"
+
+  /mentor/sessions:
+    get:
+      operationId: listMentorSessions
+      tags: [mentor]
+      summary: List mentor sessions
+      responses:
+        "200":
+          description: List of sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MentorSession"
+    post:
+      operationId: createMentorSession
+      tags: [mentor]
+      summary: Start a new mentor session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MentorSessionInput"
+      responses:
+        "201":
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MentorSession"
+
+  /mentor/sessions/{id}:
+    get:
+      operationId: getMentorSession
+      tags: [mentor]
+      summary: Get a mentor session with messages
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Session with messages
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MentorSessionWithMessages"
+
+  /mentor/sessions/{id}/messages:
+    post:
+      operationId: sendMentorMessage
+      tags: [mentor]
+      summary: Send a message in a mentor session
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MentorMessageInput"
+      responses:
+        "201":
+          description: AI response message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MentorMessage"
+
+  /goals:
+    get:
+      operationId: listGoals
+      tags: [goals]
+      summary: List engineering goals
+      responses:
+        "200":
+          description: List of goals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Goal"
+    post:
+      operationId: createGoal
+      tags: [goals]
+      summary: Create a new goal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoalInput"
+      responses:
+        "201":
+          description: Created goal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goal"
+
+  /goals/{id}:
+    patch:
+      operationId: updateGoal
+      tags: [goals]
+      summary: Update a goal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoalUpdate"
+      responses:
+        "200":
+          description: Updated goal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goal"
+    delete:
+      operationId: deleteGoal
+      tags: [goals]
+      summary: Delete a goal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary with engineering profile overview
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +634,757 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: ["string", "null"]
+        name:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+        githubUsername:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - createdAt
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: ["string", "null"]
+        avatarUrl:
+          type: ["string", "null"]
+        githubUsername:
+          type: ["string", "null"]
+        bio:
+          type: ["string", "null"]
+        targetRole:
+          type: ["string", "null"]
+        experienceLevel:
+          type: ["string", "null"]
+        primaryTrack:
+          type: ["string", "null"]
+        yearsOfExperience:
+          type: ["integer", "null"]
+        skills:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - createdAt
+        - skills
+
+    UserProfileInput:
+      type: object
+      properties:
+        name:
+          type: string
+        bio:
+          type: string
+        targetRole:
+          type: string
+        experienceLevel:
+          type: string
+        primaryTrack:
+          type: string
+        yearsOfExperience:
+          type: integer
+        skills:
+          type: array
+          items:
+            type: string
+
+    AnalysisInsight:
+      type: object
+      properties:
+        observation:
+          type: string
+        evidence:
+          type: string
+        reason:
+          type: string
+        impact:
+          type: string
+        actionPlan:
+          type: string
+        priority:
+          type: string
+          enum: [critical, high, medium, low]
+        estimatedImprovement:
+          type: string
+      required:
+        - observation
+        - evidence
+        - reason
+        - impact
+        - actionPlan
+        - priority
+        - estimatedImprovement
+
+    GithubReport:
+      type: object
+      properties:
+        id:
+          type: integer
+        githubUsername:
+          type: string
+        status:
+          type: string
+          enum: [pending, analyzing, completed, failed]
+        overallScore:
+          type: ["integer", "null"]
+        strengths:
+          type: array
+          items:
+            type: string
+        weaknesses:
+          type: array
+          items:
+            type: string
+        techStack:
+          type: array
+          items:
+            type: string
+        totalRepositories:
+          type: ["integer", "null"]
+        totalCommits:
+          type: ["integer", "null"]
+        topLanguages:
+          type: array
+          items:
+            type: string
+        insights:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalysisInsight"
+        architectureIssues:
+          type: array
+          items:
+            type: string
+        recommendations:
+          type: array
+          items:
+            type: string
+        growthAreas:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - githubUsername
+        - status
+        - strengths
+        - weaknesses
+        - techStack
+        - topLanguages
+        - insights
+        - architectureIssues
+        - recommendations
+        - growthAreas
+        - createdAt
+
+    GithubAnalysisInput:
+      type: object
+      properties:
+        githubUsername:
+          type: string
+          minLength: 1
+      required:
+        - githubUsername
+
+    PortfolioReport:
+      type: object
+      properties:
+        id:
+          type: integer
+        portfolioUrl:
+          type: string
+        status:
+          type: string
+          enum: [pending, analyzing, completed, failed]
+        overallScore:
+          type: ["integer", "null"]
+        performanceScore:
+          type: ["integer", "null"]
+        accessibilityScore:
+          type: ["integer", "null"]
+        seoScore:
+          type: ["integer", "null"]
+        uiScore:
+          type: ["integer", "null"]
+        strengths:
+          type: array
+          items:
+            type: string
+        weaknesses:
+          type: array
+          items:
+            type: string
+        insights:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalysisInsight"
+        recommendations:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - portfolioUrl
+        - status
+        - strengths
+        - weaknesses
+        - insights
+        - recommendations
+        - createdAt
+
+    PortfolioAnalysisInput:
+      type: object
+      properties:
+        portfolioUrl:
+          type: string
+          minLength: 1
+      required:
+        - portfolioUrl
+
+    ResumeReport:
+      type: object
+      properties:
+        id:
+          type: integer
+        fileName:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [pending, analyzing, completed, failed]
+        overallScore:
+          type: ["integer", "null"]
+        writingQualityScore:
+          type: ["integer", "null"]
+        technicalAccuracyScore:
+          type: ["integer", "null"]
+        impactScore:
+          type: ["integer", "null"]
+        strengths:
+          type: array
+          items:
+            type: string
+        weaknesses:
+          type: array
+          items:
+            type: string
+        missingSkills:
+          type: array
+          items:
+            type: string
+        weakClaims:
+          type: array
+          items:
+            type: string
+        improvedBullets:
+          type: array
+          items:
+            type: string
+        insights:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalysisInsight"
+        createdAt:
+          type: string
+      required:
+        - id
+        - status
+        - strengths
+        - weaknesses
+        - missingSkills
+        - weakClaims
+        - improvedBullets
+        - insights
+        - createdAt
+
+    ResumeAnalysisInput:
+      type: object
+      properties:
+        resumeText:
+          type: string
+          minLength: 1
+        targetRole:
+          type: string
+      required:
+        - resumeText
+
+    Roadmap:
+      type: object
+      properties:
+        id:
+          type: integer
+        track:
+          type: string
+        targetRole:
+          type: string
+        currentLevel:
+          type: string
+        estimatedWeeks:
+          type: integer
+        weeklyGoal:
+          type: string
+        monthlyGoal:
+          type: string
+        milestones:
+          type: array
+          items:
+            $ref: "#/components/schemas/Milestone"
+        recommendedProjects:
+          type: array
+          items:
+            type: string
+        recommendedCourses:
+          type: array
+          items:
+            type: string
+        recommendedBooks:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - track
+        - targetRole
+        - currentLevel
+        - estimatedWeeks
+        - weeklyGoal
+        - monthlyGoal
+        - milestones
+        - recommendedProjects
+        - recommendedCourses
+        - recommendedBooks
+        - createdAt
+        - updatedAt
+
+    Milestone:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        weekNumber:
+          type: integer
+        completed:
+          type: boolean
+        completedAt:
+          type: ["string", "null"]
+        skills:
+          type: array
+          items:
+            type: string
+        tasks:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - title
+        - description
+        - weekNumber
+        - completed
+        - skills
+        - tasks
+
+    RoadmapInput:
+      type: object
+      properties:
+        track:
+          type: string
+          enum: [frontend, backend, fullstack, ai, cloud, devops, security, data]
+        targetRole:
+          type: string
+        currentLevel:
+          type: string
+          enum: [beginner, junior, mid, senior]
+      required:
+        - track
+        - targetRole
+        - currentLevel
+
+    MilestoneUpdate:
+      type: object
+      properties:
+        completed:
+          type: boolean
+      required:
+        - completed
+
+    JournalEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        weekOf:
+          type: string
+        learnings:
+          type: string
+        achievements:
+          type: string
+        mistakes:
+          type: string
+        lessons:
+          type: string
+        mood:
+          type: string
+          enum: [great, good, okay, rough, terrible]
+        aiInsights:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - weekOf
+        - learnings
+        - achievements
+        - mistakes
+        - lessons
+        - mood
+        - createdAt
+        - updatedAt
+
+    JournalEntryInput:
+      type: object
+      properties:
+        weekOf:
+          type: string
+        learnings:
+          type: string
+        achievements:
+          type: string
+        mistakes:
+          type: string
+        lessons:
+          type: string
+        mood:
+          type: string
+          enum: [great, good, okay, rough, terrible]
+      required:
+        - weekOf
+        - learnings
+        - achievements
+        - mistakes
+        - lessons
+        - mood
+
+    JournalEntryUpdate:
+      type: object
+      properties:
+        learnings:
+          type: string
+        achievements:
+          type: string
+        mistakes:
+          type: string
+        lessons:
+          type: string
+        mood:
+          type: string
+          enum: [great, good, okay, rough, terrible]
+
+    MonthlyReport:
+      type: object
+      properties:
+        month:
+          type: string
+        totalEntries:
+          type: integer
+        topLearnings:
+          type: array
+          items:
+            type: string
+        topAchievements:
+          type: array
+          items:
+            type: string
+        recurringMistakes:
+          type: array
+          items:
+            type: string
+        keyLessons:
+          type: array
+          items:
+            type: string
+        growthScore:
+          type: integer
+        aiSummary:
+          type: string
+        averageMood:
+          type: string
+      required:
+        - month
+        - totalEntries
+        - topLearnings
+        - topAchievements
+        - recurringMistakes
+        - keyLessons
+        - growthScore
+        - aiSummary
+        - averageMood
+
+    MentorSession:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        topic:
+          type: string
+        messageCount:
+          type: integer
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - title
+        - topic
+        - messageCount
+        - createdAt
+        - updatedAt
+
+    MentorMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+        sessionId:
+          type: integer
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - sessionId
+        - role
+        - content
+        - createdAt
+
+    MentorSessionWithMessages:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        topic:
+          type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MentorMessage"
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - title
+        - topic
+        - messages
+        - createdAt
+        - updatedAt
+
+    MentorSessionInput:
+      type: object
+      properties:
+        topic:
+          type: string
+          minLength: 1
+        firstMessage:
+          type: string
+          minLength: 1
+      required:
+        - topic
+        - firstMessage
+
+    MentorMessageInput:
+      type: object
+      properties:
+        content:
+          type: string
+          minLength: 1
+      required:
+        - content
+
+    Goal:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        category:
+          type: string
+          enum: [skill, project, career, learning, habit]
+        status:
+          type: string
+          enum: [active, completed, paused, abandoned]
+        priority:
+          type: string
+          enum: [high, medium, low]
+        targetDate:
+          type: ["string", "null"]
+        completedAt:
+          type: ["string", "null"]
+        progress:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - title
+        - category
+        - status
+        - priority
+        - progress
+        - createdAt
+
+    GoalInput:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        category:
+          type: string
+          enum: [skill, project, career, learning, habit]
+        priority:
+          type: string
+          enum: [high, medium, low]
+        targetDate:
+          type: string
+      required:
+        - title
+        - category
+        - priority
+
+    GoalUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [active, completed, paused, abandoned]
+        priority:
+          type: string
+          enum: [high, medium, low]
+        progress:
+          type: integer
+        targetDate:
+          type: string
+
+    DashboardSummary:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        engineeringScore:
+          type: ["integer", "null"]
+        githubAnalyzed:
+          type: boolean
+        portfolioAnalyzed:
+          type: boolean
+        resumeAnalyzed:
+          type: boolean
+        hasRoadmap:
+          type: boolean
+        roadmapProgress:
+          type: ["integer", "null"]
+        activeGoals:
+          type: integer
+        completedGoals:
+          type: integer
+        journalStreak:
+          type: integer
+        mentorSessions:
+          type: integer
+        recentInsights:
+          type: array
+          items:
+            type: string
+        weeklyFocus:
+          type: ["string", "null"]
+        topSkillGaps:
+          type: array
+          items:
+            type: string
+        nextAction:
+          type: ["string", "null"]
+        growthTrend:
+          type: string
+          enum: [accelerating, steady, stalling, declining, new]
+      required:
+        - user
+        - githubAnalyzed
+        - portfolioAnalyzed
+        - resumeAnalyzed
+        - hasRoadmap
+        - activeGoals
+        - completedGoals
+        - journalStreak
+        - mentorSessions
+        - recentInsights
+        - topSkillGaps
+        - growthTrend
