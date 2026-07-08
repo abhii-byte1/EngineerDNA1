@@ -8,7 +8,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     if (isError) {
-      setLocation("/")
+      setLocation("/login")
     }
   }, [isError, setLocation])
 
