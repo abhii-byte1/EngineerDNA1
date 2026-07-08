@@ -55,6 +55,7 @@ export default function Login() {
           <div className="space-y-4 pt-4">
             <a 
               href="/api/auth/github"
+              target="_top"
               className="flex items-center justify-center w-full gap-3 bg-foreground text-background hover:bg-foreground/90 h-12 rounded-md font-medium transition-colors"
             >
               <Github className="w-5 h-5" />
