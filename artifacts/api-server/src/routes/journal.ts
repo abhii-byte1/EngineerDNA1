@@ -3,7 +3,7 @@ import { db } from "@workspace/db";
 import { journalEntriesTable } from "@workspace/db";
 import { eq, desc, and, gte, lte } from "drizzle-orm";
 import { requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
-import { openai } from "../lib/ai";
+import { gemini } from "../lib/ai";
 
 const router = Router();
 
@@ -38,16 +38,9 @@ router.post("/entries", requireAuth, async (req, res) => {
   // Generate AI insights
   let aiInsights: string | null = null;
   try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert engineering mentor. Analyze this week's journal entry and provide a concise, actionable insight paragraph (3-4 sentences) that identifies patterns, celebrates wins, and suggests a concrete focus for next week.",
-        },
-        {
-          role: "user",
-          content: `Week of: ${weekOf}
+    const response = await gemini.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `Week of: ${weekOf}
 Mood: ${mood}
 Learnings: ${learnings}
 Achievements: ${achievements}
@@ -55,10 +48,11 @@ Mistakes: ${mistakes}
 Lessons: ${lessons}
 
 Provide a brief, insightful mentor response.`,
-        },
-      ],
+      config: {
+        systemInstruction: "You are an expert engineering mentor. Analyze this week's journal entry and provide a concise, actionable insight paragraph (3-4 sentences) that identifies patterns, celebrates wins, and suggests a concrete focus for next week.",
+      },
     });
-    aiInsights = completion.choices[0].message.content ?? null;
+    aiInsights = response.text ?? null;
   } catch (err) {
     console.warn("[journal] AI insights failed:", err);
   }
@@ -148,16 +142,9 @@ router.get("/monthly-report", requireAuth, async (req, res) => {
   const avgMoodLabel = avgMoodScore >= 4.5 ? "great" : avgMoodScore >= 3.5 ? "good" : avgMoodScore >= 2.5 ? "okay" : avgMoodScore >= 1.5 ? "rough" : "terrible";
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert engineering mentor. Synthesize these journal entries into a monthly growth report with patterns, themes, and actionable guidance.",
-        },
-        {
-          role: "user",
-          content: `Analyze these ${entries.length} journal entries from the past month and return a JSON report.
+    const response = await gemini.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `Analyze these ${entries.length} journal entries from the past month and return a JSON report.
 
 Entries:
 ${entries.map((e) => `Week of ${e.weekOf}: Learnings: ${e.learnings} | Achievements: ${e.achievements} | Mistakes: ${e.mistakes} | Lessons: ${e.lessons} | Mood: ${e.mood}`).join("\n\n")}
@@ -171,12 +158,13 @@ Return ONLY valid JSON:
   "keyLessons": [<most important lessons to carry forward>],
   "growthScore": <0-100 integer reflecting overall growth momentum>
 }`,
-        },
-      ],
-      response_format: { type: "json_object" },
+      config: {
+        responseMimeType: "application/json",
+        systemInstruction: "You are an expert engineering mentor. Synthesize these journal entries into a monthly growth report with patterns, themes, and actionable guidance.",
+      },
     });
 
-    const report = JSON.parse(completion.choices[0].message.content ?? "{}") as Record<string, unknown>;
+    const report = JSON.parse(response.text ?? "{}") as Record<string, unknown>;
 
     // Compute month label
     const now = new Date();

@@ -3,7 +3,7 @@ import { db } from "@workspace/db";
 import { mentorSessionsTable, mentorMessagesTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
-import { openai } from "../lib/ai";
+import { gemini } from "../lib/ai";
 
 const router = Router();
 
@@ -39,17 +39,14 @@ router.post("/sessions", requireAuth, async (req, res) => {
   // Get AI response
   let aiContent = "I'm here to help. Tell me more about what you're working on.";
   try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: `You are an expert AI engineering mentor with 20+ years of experience. You give precise, honest, and actionable guidance to software engineers. You ask clarifying questions when needed. Topic: ${topic}`,
-        },
-        { role: "user", content: firstMessage },
-      ],
+    const response = await gemini.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: firstMessage,
+      config: {
+        systemInstruction: `You are an expert AI engineering mentor with 20+ years of experience. You give precise, honest, and actionable guidance to software engineers. You ask clarifying questions when needed. Topic: ${topic}`,
+      },
     });
-    aiContent = completion.choices[0].message.content ?? aiContent;
+    aiContent = response.text ?? aiContent;
   } catch (err) {
     console.error("[mentor] AI response error on session create:", err);
     // Continue — we'll store the fallback message so the session isn't left incomplete
@@ -118,17 +115,17 @@ router.post("/sessions/:id/messages", requireAuth, async (req, res) => {
 
   let aiContent = "Let me think about that...";
   try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: `You are an expert AI engineering mentor with 20+ years of experience. You give precise, honest, and actionable guidance. Session topic: ${session.topic}`,
-        },
-        ...messages,
-      ],
+    const response = await gemini.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: messages.map(m => ({
+        role: m.role === "assistant" ? "model" : "user",
+        parts: [{ text: m.content }]
+      })),
+      config: {
+        systemInstruction: `You are an expert AI engineering mentor with 20+ years of experience. You give precise, honest, and actionable guidance. Session topic: ${session.topic}`,
+      },
     });
-    aiContent = completion.choices[0].message.content ?? aiContent;
+    aiContent = response.text ?? aiContent;
   } catch (err) {
     console.error("[mentor] AI response error on send message:", err);
     // Continue with fallback — don't leave user message without a response

@@ -1,9 +1,9 @@
-import OpenAI from "openai";
+import { GoogleGenAI } from "@google/genai";
 
-if (!process.env.OPENAI_API_KEY) {
-  console.warn("[ai] OPENAI_API_KEY is not set — AI features will return errors until the key is provided");
+if (!process.env.GEMINI_API_KEY) {
+  console.warn("[ai] GEMINI_API_KEY is not set — AI features will return errors until the key is provided");
 }
 
-export const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY ?? "missing-key",
+export const gemini = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY ?? "missing-key",
 });

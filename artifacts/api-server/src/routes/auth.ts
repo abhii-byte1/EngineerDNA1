@@ -17,9 +17,17 @@ const COOKIE_OPTIONS = {
 };
 
 function getRedirectUri(req: any): string {
+  if (process.env.APP_URL) return `${process.env.APP_URL}/api/auth/github/callback`;
   const domain = process.env.REPLIT_DEV_DOMAIN;
   if (domain) return `https://${domain}/api/auth/github/callback`;
   return `${req.protocol}://${req.get("host")}/api/auth/github/callback`;
+}
+
+function getFrontendUrl(path: string): string {
+  if (process.env.NODE_ENV === "production") {
+    return path;
+  }
+  return `http://localhost:8080${path}`;
 }
 
 async function createSession(userId: number): Promise<string> {
@@ -52,18 +60,18 @@ router.get("/github/callback", async (req, res) => {
   const storedState = req.cookies?.oauth_state as string | undefined;
   res.clearCookie("oauth_state");
   if (!state || !storedState || state !== storedState) {
-    res.redirect("/?error=invalid_state");
+    res.redirect(getFrontendUrl("/?error=invalid_state"));
     return;
   }
 
   if (!code) {
-    res.redirect("/?error=missing_code");
+    res.redirect(getFrontendUrl("/?error=missing_code"));
     return;
   }
   const clientId = process.env.GITHUB_CLIENT_ID;
   const clientSecret = process.env.GITHUB_CLIENT_SECRET;
   if (!clientId || !clientSecret) {
-    res.redirect("/?error=oauth_not_configured");
+    res.redirect(getFrontendUrl("/?error=oauth_not_configured"));
     return;
   }
 
@@ -80,7 +88,7 @@ router.get("/github/callback", async (req, res) => {
   });
   const tokenData = (await tokenRes.json()) as { access_token?: string; error?: string };
   if (!tokenData.access_token) {
-    res.redirect("/?error=oauth_failed");
+    res.redirect(getFrontendUrl("/?error=oauth_failed"));
     return;
   }
 
@@ -89,7 +97,7 @@ router.get("/github/callback", async (req, res) => {
     headers: { Authorization: `Bearer ${tokenData.access_token}`, "User-Agent": "EngineerDNA/1.0" },
   });
   if (!ghRes.ok) {
-    res.redirect("/?error=github_fetch_failed");
+    res.redirect(getFrontendUrl("/?error=github_fetch_failed"));
     return;
   }
   const ghUser = (await ghRes.json()) as {
@@ -125,7 +133,7 @@ router.get("/github/callback", async (req, res) => {
 
   const token = await createSession(userId);
   res.cookie("session_token", token, COOKIE_OPTIONS);
-  res.redirect("/dashboard");
+  res.redirect(getFrontendUrl("/dashboard"));
 });
 
 // GET /api/auth/dev-login — development only fast login
@@ -146,7 +154,7 @@ router.get("/dev-login", async (_req, res) => {
   }
   const token = await createSession(user.id);
   res.cookie("session_token", token, { ...COOKIE_OPTIONS, secure: false });
-  res.redirect("/dashboard");
+  res.redirect(getFrontendUrl("/dashboard"));
 });
 
 // GET /api/auth/me — return current user

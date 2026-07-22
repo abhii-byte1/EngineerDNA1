@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Github, Loader2, GitBranch, AlertTriangle, Lightbulb, CheckCircle2, ArrowRight } from "lucide-react"
+import { Github, Loader2, GitBranch, AlertTriangle, Lightbulb, CheckCircle2, ArrowRight, RefreshCw } from "lucide-react"
 
 const formSchema = z.object({
   username: z.string().min(1, "GitHub username is required")
@@ -34,6 +34,7 @@ export default function GithubDNA() {
   const reportToDisplay = polledReport || latestReport
 
   const analyze = useAnalyzeGithub()
+  const [lastUsername, setLastUsername] = React.useState("")
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -41,11 +42,20 @@ export default function GithubDNA() {
   })
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
+    setLastUsername(values.username)
     analyze.mutate({ data: { githubUsername: values.username } }, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getListGithubReportsQueryKey() })
         form.reset()
       }
+    })
+  }
+
+  const retryAnalysis = () => {
+    const username = lastUsername || reportToDisplay?.githubUsername || ""
+    if (!username) return
+    analyze.mutate({ data: { githubUsername: username } }, {
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: getListGithubReportsQueryKey() })
     })
   }
 
@@ -257,9 +267,18 @@ export default function GithubDNA() {
       )}
 
       {reportToDisplay && reportToDisplay.status === "failed" && (
-        <Card className="border-destructive">
-          <CardContent className="p-6 text-center text-destructive">
-            Analysis failed. Please check the username and try again.
+        <Card className="border-destructive/50 bg-destructive/5">
+          <CardContent className="p-8 flex flex-col items-center gap-4 text-center">
+            <AlertTriangle className="w-10 h-10 text-destructive" />
+            <div>
+              <p className="font-semibold text-destructive">Analysis failed</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Could not complete analysis for <span className="font-mono">{reportToDisplay.githubUsername}</span>. Check the username and try again.
+              </p>
+            </div>
+            <Button variant="outline" onClick={retryAnalysis} disabled={analyze.isPending} className="gap-2">
+              <RefreshCw className="w-4 h-4" /> Retry Analysis
+            </Button>
           </CardContent>
         </Card>
       )}

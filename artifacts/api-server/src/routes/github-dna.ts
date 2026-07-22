@@ -3,7 +3,7 @@ import { db } from "@workspace/db";
 import { githubReportsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
-import { openai } from "../lib/ai";
+import { gemini } from "../lib/ai";
 
 const router = Router();
 
@@ -54,16 +54,9 @@ router.post("/analyze", requireAuth, async (req, res) => {
     }
     const topLanguages = Object.entries(langCounts).sort((a, b) => b[1] - a[1]).map(([l]) => l).slice(0, 10);
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: "You are a brutally honest, expert engineering career coach. You analyze GitHub profiles with surgical precision to identify strengths, weaknesses, and growth opportunities. Be specific — reference actual repo names, languages, and patterns. Never be generic.",
-        },
-        {
-          role: "user",
-          content: `Analyze this GitHub profile and return a JSON engineering assessment.
+    const response = await gemini.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `Analyze this GitHub profile and return a JSON engineering assessment.
 
 GitHub Profile: ${JSON.stringify(ghUser)}
 Repositories (most recent 25): ${JSON.stringify(repoSummary)}
@@ -90,12 +83,13 @@ Return ONLY valid JSON with this exact structure:
     }
   ]
 }`,
-        },
-      ],
-      response_format: { type: "json_object" },
+      config: {
+        responseMimeType: "application/json",
+        systemInstruction: "You are a brutally honest, expert engineering career coach. You analyze GitHub profiles with surgical precision to identify strengths, weaknesses, and growth opportunities. Be specific — reference actual repo names, languages, and patterns. Never be generic.",
+      },
     });
 
-    const analysis = JSON.parse(completion.choices[0].message.content ?? "{}") as Record<string, unknown>;
+    const analysis = JSON.parse(response.text ?? "{}") as Record<string, unknown>;
 
     const [updated] = await db
       .update(githubReportsTable)

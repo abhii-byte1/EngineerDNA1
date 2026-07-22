@@ -3,7 +3,7 @@ import { db } from "@workspace/db";
 import { roadmapsTable, milestonesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
-import { openai } from "../lib/ai";
+import { gemini } from "../lib/ai";
 
 const router = Router();
 
@@ -40,16 +40,9 @@ router.post("/", requireAuth, async (req, res) => {
   }
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert engineering career coach who creates precise, actionable roadmaps for software engineers. Your roadmaps are week-by-week, milestone-driven, and deeply practical.",
-        },
-        {
-          role: "user",
-          content: `Create a comprehensive engineering growth roadmap.
+    const response = await gemini.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `Create a comprehensive engineering growth roadmap.
 
 Track: ${track}
 Target Role: ${targetRole}
@@ -75,12 +68,13 @@ Return ONLY valid JSON:
 }
 
 Generate 6-12 milestones spread across the timeline. Be specific and practical.`,
-        },
-      ],
-      response_format: { type: "json_object" },
+      config: {
+        responseMimeType: "application/json",
+        systemInstruction: "You are an expert engineering career coach who creates precise, actionable roadmaps for software engineers. Your roadmaps are week-by-week, milestone-driven, and deeply practical.",
+      },
     });
 
-    const plan = JSON.parse(completion.choices[0].message.content ?? "{}") as Record<string, unknown>;
+    const plan = JSON.parse(response.text ?? "{}") as Record<string, unknown>;
 
     // Delete existing roadmap if any
     const existing = await db.select().from(roadmapsTable).where(eq(roadmapsTable.userId, user.id)).limit(1);

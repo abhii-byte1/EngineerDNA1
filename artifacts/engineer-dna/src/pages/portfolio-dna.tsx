@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Globe, Layout, Zap, Eye, Search, AlertTriangle, CheckCircle2 } from "lucide-react"
+import { Globe, Layout, Zap, Eye, Search, AlertTriangle, CheckCircle2, RefreshCw } from "lucide-react"
 
 const formSchema = z.object({
   url: z.string().url("Must be a valid URL")
@@ -23,18 +23,28 @@ export default function PortfolioDNA() {
   const latestReport = reports && reports.length > 0 ? reports[0] : null
   
   const analyze = useAnalyzePortfolio()
-  
+  const [lastUrl, setLastUrl] = React.useState("")
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { url: "" }
   })
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
+    setLastUrl(values.url)
     analyze.mutate({ data: { portfolioUrl: values.url } }, {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getListPortfolioReportsQueryKey() })
         form.reset()
       }
+    })
+  }
+
+  const retryAnalysis = () => {
+    const url = lastUrl || latestReport?.portfolioUrl || ""
+    if (!url) return
+    analyze.mutate({ data: { portfolioUrl: url } }, {
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: getListPortfolioReportsQueryKey() })
     })
   }
 
@@ -98,7 +108,24 @@ export default function PortfolioDNA() {
         </Card>
       )}
 
-      {latestReport && !analyze.isPending && (
+      {latestReport && latestReport.status === "failed" && !analyze.isPending && (
+        <Card className="border-destructive/50 bg-destructive/5">
+          <CardContent className="p-8 flex flex-col items-center gap-4 text-center">
+            <AlertTriangle className="w-10 h-10 text-destructive" />
+            <div>
+              <p className="font-semibold text-destructive">Analysis failed</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Could not scan <span className="font-mono">{latestReport.portfolioUrl}</span>. The URL may be unreachable or blocked.
+              </p>
+            </div>
+            <Button variant="outline" onClick={retryAnalysis} disabled={analyze.isPending} className="gap-2">
+              <RefreshCw className="w-4 h-4" /> Retry Scan
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {latestReport && latestReport.status !== "failed" && !analyze.isPending && (
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

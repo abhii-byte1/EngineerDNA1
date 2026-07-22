@@ -3,7 +3,7 @@ import { db } from "@workspace/db";
 import { resumeReportsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
-import { openai } from "../lib/ai";
+import { gemini } from "../lib/ai";
 
 const router = Router();
 
@@ -23,16 +23,9 @@ router.post("/analyze", requireAuth, async (req, res) => {
     .returning();
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: "You are a senior engineering hiring manager and technical recruiter with 15 years of experience reviewing software engineering resumes. You give brutally honest, specific, actionable feedback.",
-        },
-        {
-          role: "user",
-          content: `Analyze this engineering resume and return a JSON assessment.
+    const response = await gemini.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `Analyze this engineering resume and return a JSON assessment.
 
 ${targetRole ? `Target Role: ${targetRole}` : ""}
 
@@ -62,12 +55,13 @@ Return ONLY valid JSON:
     }
   ]
 }`,
-        },
-      ],
-      response_format: { type: "json_object" },
+      config: {
+        responseMimeType: "application/json",
+        systemInstruction: "You are a senior engineering hiring manager and technical recruiter with 15 years of experience reviewing software engineering resumes. You give brutally honest, specific, actionable feedback.",
+      },
     });
 
-    const analysis = JSON.parse(completion.choices[0].message.content ?? "{}") as Record<string, unknown>;
+    const analysis = JSON.parse(response.text ?? "{}") as Record<string, unknown>;
 
     const [updated] = await db
       .update(resumeReportsTable)

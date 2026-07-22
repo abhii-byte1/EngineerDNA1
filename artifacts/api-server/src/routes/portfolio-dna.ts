@@ -3,7 +3,7 @@ import { db } from "@workspace/db";
 import { portfolioReportsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
-import { openai } from "../lib/ai";
+import { gemini } from "../lib/ai";
 
 const router = Router();
 
@@ -37,16 +37,9 @@ router.post("/analyze", requireAuth, async (req, res) => {
       pageContent = "(Unable to fetch portfolio content — analyzing URL only)";
     }
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert web developer and UX/performance analyst. You evaluate engineering portfolios on performance, accessibility, SEO, and UI/UX quality.",
-        },
-        {
-          role: "user",
-          content: `Analyze this portfolio website and return a JSON assessment.
+    const response = await gemini.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: `Analyze this portfolio website and return a JSON assessment.
 
 URL: ${portfolioUrl}
 Page Content (first 8000 chars): ${pageContent}
@@ -73,12 +66,13 @@ Return ONLY valid JSON:
     }
   ]
 }`,
-        },
-      ],
-      response_format: { type: "json_object" },
+      config: {
+        responseMimeType: "application/json",
+        systemInstruction: "You are an expert web developer and UX/performance analyst. You evaluate engineering portfolios on performance, accessibility, SEO, and UI/UX quality.",
+      },
     });
 
-    const analysis = JSON.parse(completion.choices[0].message.content ?? "{}") as Record<string, unknown>;
+    const analysis = JSON.parse(response.text ?? "{}") as Record<string, unknown>;
 
     const [updated] = await db
       .update(portfolioReportsTable)

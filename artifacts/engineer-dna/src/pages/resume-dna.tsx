@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { FileText, Target, Search, AlertCircle, Wand2, Check } from "lucide-react"
+import { FileText, Target, Search, AlertCircle, Wand2, Check, RefreshCw } from "lucide-react"
 
 const formSchema = z.object({
   targetRole: z.string().optional(),
@@ -23,13 +23,15 @@ export default function ResumeDNA() {
   
   const latestReport = reports && reports.length > 0 ? reports[0] : null
   const analyze = useAnalyzeResume()
-  
+  const [lastValues, setLastValues] = React.useState<{ resumeText: string; targetRole?: string } | null>(null)
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { targetRole: "", resumeText: "" }
   })
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
+    setLastValues({ resumeText: values.resumeText, targetRole: values.targetRole || undefined })
     analyze.mutate({ 
       data: { 
         resumeText: values.resumeText,
@@ -40,6 +42,13 @@ export default function ResumeDNA() {
         queryClient.invalidateQueries({ queryKey: getListResumeReportsQueryKey() })
         form.reset()
       }
+    })
+  }
+
+  const retryAnalysis = () => {
+    if (!lastValues) return
+    analyze.mutate({ data: lastValues }, {
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: getListResumeReportsQueryKey() })
     })
   }
 
@@ -100,6 +109,19 @@ export default function ResumeDNA() {
               <div className="text-center space-y-4">
                 <Search className="w-12 h-12 text-muted-foreground animate-pulse mx-auto" />
                 <p className="font-mono text-sm text-muted-foreground">Searching for quantifiable metrics...</p>
+              </div>
+            </Card>
+          ) : latestReport?.status === "failed" ? (
+            <Card className="h-full min-h-[400px] flex items-center justify-center border-destructive/50 bg-destructive/5">
+              <div className="text-center space-y-4">
+                <AlertCircle className="w-12 h-12 text-destructive mx-auto" />
+                <div>
+                  <p className="font-semibold text-destructive">Analysis failed</p>
+                  <p className="text-sm text-muted-foreground mt-1">Something went wrong processing your resume.</p>
+                </div>
+                <Button variant="outline" onClick={retryAnalysis} disabled={analyze.isPending} className="gap-2">
+                  <RefreshCw className="w-4 h-4" /> Retry Analysis
+                </Button>
               </div>
             </Card>
           ) : latestReport ? (
