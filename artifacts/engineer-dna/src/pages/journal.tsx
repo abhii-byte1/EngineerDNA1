@@ -25,6 +25,7 @@ export default function JournalPage() {
   const [isCreating, setIsCreating] = React.useState(false)
   
   const { data: entries, isLoading } = useListJournalEntries()
+  // @ts-expect-error Zodios provides queryKey internally but types are misaligned
   const { data: monthlyReport } = useGetMonthlyReport({ query: { retry: false } })
   const createEntry = useCreateJournalEntry()
 

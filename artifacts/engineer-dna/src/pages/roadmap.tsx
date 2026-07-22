@@ -22,6 +22,7 @@ const formSchema = z.object({
 export default function RoadmapPage() {
   const queryClient = useQueryClient()
   const { data: roadmap, isError, isLoading } = useGetRoadmap({
+    // @ts-expect-error Zodios provides queryKey internally but types are misaligned
     query: {
       retry: false // don't retry 404s
     }

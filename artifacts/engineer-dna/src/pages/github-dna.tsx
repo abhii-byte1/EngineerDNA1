@@ -25,6 +25,7 @@ export default function GithubDNA() {
   // Also setup polling if status is pending/analyzing
   const isPolling = latestReport?.status === "pending" || latestReport?.status === "analyzing"
   const { data: polledReport } = useGetGithubReport(latestReport?.id as number, {
+    // @ts-expect-error Zodios provides queryKey internally but types are misaligned
     query: {
       enabled: isPolling && !!latestReport?.id,
       refetchInterval: 3000,

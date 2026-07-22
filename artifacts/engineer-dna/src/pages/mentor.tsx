@@ -33,6 +33,7 @@ export default function MentorPage() {
   }, [sessions, activeSessionId])
 
   const { data: activeSession, isLoading: isSessionLoading } = useGetMentorSession(activeSessionId as number, {
+    // @ts-expect-error Zodios provides queryKey internally but types are misaligned
     query: { enabled: !!activeSessionId }
   })
 
