@@ -4,7 +4,7 @@ import { db } from "@workspace/db";
 import { usersTable, sessionsTable } from "@workspace/db";
 import { eq, and, gt } from "drizzle-orm";
 import { requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
-import { authLimiter } from "../app";
+import { authLimiter } from "../lib/rate-limiters";
 
 const router = Router();
 

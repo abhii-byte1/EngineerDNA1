@@ -5,7 +5,7 @@ import { roadmapsTable, milestonesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
 import { gemini } from "../lib/ai";
-import { aiLimiter } from "../app";
+import { aiLimiter } from "../lib/rate-limiters";
 
 const router = Router();
 
