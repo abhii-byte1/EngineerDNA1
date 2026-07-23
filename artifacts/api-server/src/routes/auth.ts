@@ -4,6 +4,7 @@ import { db } from "@workspace/db";
 import { usersTable, sessionsTable } from "@workspace/db";
 import { eq, and, gt } from "drizzle-orm";
 import { requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
+import { authLimiter } from "../app";
 
 const router = Router();
 
@@ -38,7 +39,7 @@ async function createSession(userId: number): Promise<string> {
 }
 
 // GET /api/auth/github — redirect to GitHub OAuth (with CSRF state)
-router.get("/github", (req, res) => {
+router.get("/github", authLimiter, (req, res) => {
   const clientId = process.env.GITHUB_CLIENT_ID;
   if (!clientId) {
     res.status(500).json({ error: "GitHub OAuth is not configured. Set GITHUB_CLIENT_ID." });
@@ -53,7 +54,7 @@ router.get("/github", (req, res) => {
 });
 
 // GET /api/auth/github/callback — handle OAuth callback
-router.get("/github/callback", async (req, res) => {
+router.get("/github/callback", authLimiter, async (req, res) => {
   const { code, state } = req.query as { code?: string; state?: string };
 
   // Validate CSRF state

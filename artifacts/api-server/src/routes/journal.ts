@@ -1,11 +1,32 @@
 import { Router } from "express";
+import { z } from "zod";
 import { db } from "@workspace/db";
 import { journalEntriesTable } from "@workspace/db";
-import { eq, desc, and, gte, lte } from "drizzle-orm";
+import { eq, desc, and, gte } from "drizzle-orm";
 import { requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
 import { gemini } from "../lib/ai";
 
 const router = Router();
+
+// ── Zod Schemas ───────────────────────────────────────────────────────────────
+const TEXT_MAX = 5000;
+
+const createEntrySchema = z.object({
+  weekOf: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "weekOf must be a date in YYYY-MM-DD format"),
+  learnings: z.string().max(TEXT_MAX).optional().default(""),
+  achievements: z.string().max(TEXT_MAX).optional().default(""),
+  mistakes: z.string().max(TEXT_MAX).optional().default(""),
+  lessons: z.string().max(TEXT_MAX).optional().default(""),
+  mood: z.enum(["great", "good", "okay", "rough", "terrible"]).optional().default("okay"),
+});
+
+const updateEntrySchema = z.object({
+  learnings: z.string().max(TEXT_MAX).optional(),
+  achievements: z.string().max(TEXT_MAX).optional(),
+  mistakes: z.string().max(TEXT_MAX).optional(),
+  lessons: z.string().max(TEXT_MAX).optional(),
+  mood: z.enum(["great", "good", "okay", "rough", "terrible"]).optional(),
+});
 
 // GET /api/journal/entries
 router.get("/entries", requireAuth, async (req, res) => {
@@ -21,19 +42,15 @@ router.get("/entries", requireAuth, async (req, res) => {
 // POST /api/journal/entries
 router.post("/entries", requireAuth, async (req, res) => {
   const { user } = req as AuthenticatedRequest;
-  const { weekOf, learnings, achievements, mistakes, lessons, mood } = req.body as {
-    weekOf: string;
-    learnings: string;
-    achievements: string;
-    mistakes: string;
-    lessons: string;
-    mood: string;
-  };
 
-  if (!weekOf) {
-    res.status(400).json({ error: "weekOf is required" });
+  // FIX: Validate and sanitize all inputs with Zod
+  const parsed = createEntrySchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors });
     return;
   }
+
+  const { weekOf, learnings, achievements, mistakes, lessons, mood } = parsed.data;
 
   // Generate AI insights
   let aiInsights: string | null = null;
@@ -59,7 +76,7 @@ Provide a brief, insightful mentor response.`,
 
   const [entry] = await db
     .insert(journalEntriesTable)
-    .values({ userId: user.id, weekOf, learnings: learnings ?? "", achievements: achievements ?? "", mistakes: mistakes ?? "", lessons: lessons ?? "", mood: mood ?? "okay", aiInsights })
+    .values({ userId: user.id, weekOf, learnings, achievements, mistakes, lessons, mood, aiInsights })
     .returning();
 
   res.status(201).json(JSON.parse(JSON.stringify(entry)));
@@ -87,7 +104,15 @@ router.patch("/entries/:id", requireAuth, async (req, res) => {
     return;
   }
 
-  const { learnings, achievements, mistakes, lessons, mood } = req.body as Record<string, string>;
+  // FIX: Validate all update fields with Zod
+  const parsed = updateEntrySchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors });
+    return;
+  }
+
+  const { learnings, achievements, mistakes, lessons, mood } = parsed.data;
+
   const [updated] = await db
     .update(journalEntriesTable)
     .set({
@@ -166,7 +191,6 @@ Return ONLY valid JSON:
 
     const report = JSON.parse(response.text ?? "{}") as Record<string, unknown>;
 
-    // Compute month label
     const now = new Date();
     const monthLabel = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
@@ -182,8 +206,9 @@ Return ONLY valid JSON:
       keyLessons: report.keyLessons ?? [],
     });
   } catch (err) {
+    // FIX: Log details server-side, return generic error to client
     console.error("[journal] monthly report error:", err);
-    res.status(500).json({ error: "Monthly report generation failed", details: err instanceof Error ? err.message : String(err) });
+    res.status(500).json({ error: "Monthly report generation failed. Please try again." });
   }
 });
 

@@ -1,10 +1,39 @@
 import { Router } from "express";
+import { z } from "zod";
 import { db } from "@workspace/db";
 import { goalsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
 
 const router = Router();
+
+// ── Zod Schemas ───────────────────────────────────────────────────────────────
+const PRIORITY_VALUES = ["low", "medium", "high", "critical"] as const;
+const CATEGORY_VALUES = ["technical", "career", "learning", "soft-skills", "project", "other"] as const;
+const STATUS_VALUES = ["active", "completed", "paused", "abandoned"] as const;
+
+const createGoalSchema = z.object({
+  title: z.string().min(1, "title is required").max(200, "Title cannot exceed 200 characters"),
+  description: z.string().max(1000, "Description cannot exceed 1,000 characters").optional(),
+  category: z.enum(CATEGORY_VALUES, {
+    errorMap: () => ({ message: `category must be one of: ${CATEGORY_VALUES.join(", ")}` }),
+  }),
+  priority: z.enum(PRIORITY_VALUES).optional().default("medium"),
+  targetDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "targetDate must be YYYY-MM-DD format")
+    .optional(),
+});
+
+const updateGoalSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  description: z.string().max(1000).optional(),
+  category: z.enum(CATEGORY_VALUES).optional(),
+  status: z.enum(STATUS_VALUES).optional(),
+  priority: z.enum(PRIORITY_VALUES).optional(),
+  targetDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  progress: z.number().int().min(0).max(100).optional(),
+});
 
 // GET /api/goals
 router.get("/", requireAuth, async (req, res) => {
@@ -20,27 +49,24 @@ router.get("/", requireAuth, async (req, res) => {
 // POST /api/goals
 router.post("/", requireAuth, async (req, res) => {
   const { user } = req as AuthenticatedRequest;
-  const { title, description, category, priority, targetDate } = req.body as {
-    title: string;
-    description?: string;
-    category: string;
-    priority?: string;
-    targetDate?: string;
-  };
 
-  if (!title?.trim() || !category?.trim()) {
-    res.status(400).json({ error: "title and category are required" });
+  // FIX: Validate and sanitize inputs with Zod
+  const parsed = createGoalSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors });
     return;
   }
+
+  const { title, description, category, priority, targetDate } = parsed.data;
 
   const [goal] = await db
     .insert(goalsTable)
     .values({
       userId: user.id,
-      title: title.trim(),
+      title,
       description: description ?? null,
       category,
-      priority: priority ?? "medium",
+      priority,
       targetDate: targetDate ?? null,
     })
     .returning();
@@ -59,15 +85,14 @@ router.patch("/:id", requireAuth, async (req, res) => {
     return;
   }
 
-  const { title, description, category, status, priority, targetDate, progress } = req.body as {
-    title?: string;
-    description?: string;
-    category?: string;
-    status?: string;
-    priority?: string;
-    targetDate?: string;
-    progress?: number;
-  };
+  // FIX: Validate all update fields with Zod
+  const parsed = updateGoalSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors });
+    return;
+  }
+
+  const { title, description, category, status, priority, targetDate, progress } = parsed.data;
 
   const completedAt =
     status === "completed" && existing.status !== "completed"
@@ -85,7 +110,7 @@ router.patch("/:id", requireAuth, async (req, res) => {
       ...(status !== undefined && { status }),
       ...(priority !== undefined && { priority }),
       ...(targetDate !== undefined && { targetDate }),
-      ...(progress !== undefined && { progress: Math.min(100, Math.max(0, progress)) }),
+      ...(progress !== undefined && { progress }),
       ...(completedAt !== undefined && { completedAt }),
       updatedAt: new Date(),
     })

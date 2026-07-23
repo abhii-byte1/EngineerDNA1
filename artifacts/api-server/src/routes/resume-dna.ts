@@ -1,25 +1,40 @@
 import { Router } from "express";
+import { z } from "zod";
 import { db } from "@workspace/db";
 import { resumeReportsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
 import { gemini } from "../lib/ai";
+import { aiLimiter } from "../app";
 
 const router = Router();
 
-// POST /api/resume-dna/analyze
-router.post("/analyze", requireAuth, async (req, res) => {
-  const { user } = req as AuthenticatedRequest;
-  const { resumeText, targetRole } = req.body as { resumeText: string; targetRole?: string };
+// ── Zod Schemas ───────────────────────────────────────────────────────────────
+const analyzeSchema = z.object({
+  // FIX: Cap resume text to prevent abuse and excessive AI token costs
+  resumeText: z
+    .string()
+    .min(50, "Resume text is too short")
+    .max(20000, "Resume text cannot exceed 20,000 characters"),
+  targetRole: z.string().max(100).optional(),
+});
 
-  if (!resumeText?.trim()) {
-    res.status(400).json({ error: "resumeText is required" });
+// POST /api/resume-dna/analyze
+router.post("/analyze", requireAuth, aiLimiter, async (req, res) => {
+  const { user } = req as AuthenticatedRequest;
+
+  // FIX: Validate input with Zod
+  const parsed = analyzeSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors });
     return;
   }
 
+  const { resumeText, targetRole } = parsed.data;
+
   const [report] = await db
     .insert(resumeReportsTable)
-    .values({ userId: user.id, resumeText: resumeText.trim(), targetRole: targetRole ?? null, status: "analyzing" })
+    .values({ userId: user.id, resumeText, targetRole: targetRole ?? null, status: "analyzing" })
     .returning();
 
   try {
@@ -83,9 +98,10 @@ Return ONLY valid JSON:
 
     res.json(JSON.parse(JSON.stringify(updated)));
   } catch (err) {
+    // FIX: Log details server-side, return generic error to client
     console.error("[resume-dna] analysis error:", err);
     await db.update(resumeReportsTable).set({ status: "failed" }).where(eq(resumeReportsTable.id, report.id));
-    res.status(500).json({ error: "Analysis failed", details: err instanceof Error ? err.message : String(err) });
+    res.status(500).json({ error: "Analysis failed. Please try again." });
   }
 });
 
@@ -110,6 +126,19 @@ router.get("/reports/:id", requireAuth, async (req, res) => {
     return;
   }
   res.json(JSON.parse(JSON.stringify(report)));
+});
+
+// DELETE /api/resume-dna/reports/:id
+router.delete("/reports/:id", requireAuth, async (req, res) => {
+  const { user } = req as AuthenticatedRequest;
+  const id = parseInt(req.params.id as string, 10);
+  const [report] = await db.select().from(resumeReportsTable).where(eq(resumeReportsTable.id, id)).limit(1);
+  if (!report || report.userId !== user.id) {
+    res.status(404).json({ error: "Report not found" });
+    return;
+  }
+  await db.delete(resumeReportsTable).where(eq(resumeReportsTable.id, id));
+  res.json({ message: "Report deleted" });
 });
 
 export default router;

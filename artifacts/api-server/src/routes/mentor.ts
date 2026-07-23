@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { z } from "zod";
 import { db } from "@workspace/db";
 import { mentorSessionsTable, mentorMessagesTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
@@ -6,6 +7,16 @@ import { requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
 import { gemini } from "../lib/ai";
 
 const router = Router();
+
+// ── Zod Schemas ───────────────────────────────────────────────────────────────
+const createSessionSchema = z.object({
+  topic: z.string().min(1, "topic is required").max(200, "Topic cannot exceed 200 characters"),
+  firstMessage: z.string().min(1, "firstMessage is required").max(5000, "Message cannot exceed 5,000 characters"),
+});
+
+const sendMessageSchema = z.object({
+  content: z.string().min(1, "content is required").max(5000, "Message cannot exceed 5,000 characters"),
+});
 
 // GET /api/mentor/sessions
 router.get("/sessions", requireAuth, async (req, res) => {
@@ -21,12 +32,15 @@ router.get("/sessions", requireAuth, async (req, res) => {
 // POST /api/mentor/sessions — create session + send first message
 router.post("/sessions", requireAuth, async (req, res) => {
   const { user } = req as AuthenticatedRequest;
-  const { topic, firstMessage } = req.body as { topic: string; firstMessage: string };
 
-  if (!topic?.trim() || !firstMessage?.trim()) {
-    res.status(400).json({ error: "topic and firstMessage are required" });
+  // FIX: Validate inputs with Zod
+  const parsed = createSessionSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors });
     return;
   }
+
+  const { topic, firstMessage } = parsed.data;
 
   const [session] = await db
     .insert(mentorSessionsTable)
@@ -48,6 +62,7 @@ router.post("/sessions", requireAuth, async (req, res) => {
     });
     aiContent = response.text ?? aiContent;
   } catch (err) {
+    // FIX: Log details server-side only
     console.error("[mentor] AI response error on session create:", err);
     // Continue — we'll store the fallback message so the session isn't left incomplete
   }
@@ -88,12 +103,15 @@ router.get("/sessions/:id", requireAuth, async (req, res) => {
 router.post("/sessions/:id/messages", requireAuth, async (req, res) => {
   const { user } = req as AuthenticatedRequest;
   const id = parseInt(req.params.id as string, 10);
-  const { content } = req.body as { content: string };
 
-  if (!content?.trim()) {
-    res.status(400).json({ error: "content is required" });
+  // FIX: Validate message content with Zod
+  const parsed = sendMessageSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors });
     return;
   }
+
+  const { content } = parsed.data;
 
   const [session] = await db.select().from(mentorSessionsTable).where(eq(mentorSessionsTable.id, id)).limit(1);
   if (!session || session.userId !== user.id) {
@@ -127,6 +145,7 @@ router.post("/sessions/:id/messages", requireAuth, async (req, res) => {
     });
     aiContent = response.text ?? aiContent;
   } catch (err) {
+    // FIX: Log details server-side only
     console.error("[mentor] AI response error on send message:", err);
     // Continue with fallback — don't leave user message without a response
   }

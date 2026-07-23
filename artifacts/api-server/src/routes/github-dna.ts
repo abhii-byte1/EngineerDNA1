@@ -1,25 +1,40 @@
 import { Router } from "express";
+import { z } from "zod";
 import { db } from "@workspace/db";
 import { githubReportsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
 import { gemini } from "../lib/ai";
+import { aiLimiter } from "../app";
 
 const router = Router();
 
-// POST /api/github-dna/analyze
-router.post("/analyze", requireAuth, async (req, res) => {
-  const { user } = req as AuthenticatedRequest;
-  const { githubUsername } = req.body as { githubUsername: string };
+// ── Zod Schemas ───────────────────────────────────────────────────────────────
+// GitHub usernames: 1-39 chars, alphanumeric + hyphens only
+const analyzeSchema = z.object({
+  githubUsername: z
+    .string()
+    .min(1, "githubUsername is required")
+    .max(39, "GitHub username cannot exceed 39 characters")
+    .regex(/^[a-zA-Z0-9-]+$/, "Invalid GitHub username format"),
+});
 
-  if (!githubUsername?.trim()) {
-    res.status(400).json({ error: "githubUsername is required" });
+// POST /api/github-dna/analyze
+router.post("/analyze", requireAuth, aiLimiter, async (req, res) => {
+  const { user } = req as AuthenticatedRequest;
+
+  // FIX: Validate input with Zod
+  const parsed = analyzeSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors });
     return;
   }
 
+  const { githubUsername } = parsed.data;
+
   const [report] = await db
     .insert(githubReportsTable)
-    .values({ userId: user.id, githubUsername: githubUsername.trim(), status: "analyzing" })
+    .values({ userId: user.id, githubUsername, status: "analyzing" })
     .returning();
 
   try {
@@ -111,9 +126,10 @@ Return ONLY valid JSON with this exact structure:
 
     res.json(JSON.parse(JSON.stringify(updated)));
   } catch (err) {
+    // FIX: Log details server-side, return generic error to client
     console.error("[github-dna] analysis error:", err);
     await db.update(githubReportsTable).set({ status: "failed" }).where(eq(githubReportsTable.id, report.id));
-    res.status(500).json({ error: "Analysis failed", details: err instanceof Error ? err.message : String(err) });
+    res.status(500).json({ error: "Analysis failed. Please try again." });
   }
 });
 
@@ -138,6 +154,19 @@ router.get("/reports/:id", requireAuth, async (req, res) => {
     return;
   }
   res.json(JSON.parse(JSON.stringify(report)));
+});
+
+// DELETE /api/github-dna/reports/:id
+router.delete("/reports/:id", requireAuth, async (req, res) => {
+  const { user } = req as AuthenticatedRequest;
+  const id = parseInt(req.params.id as string, 10);
+  const [report] = await db.select().from(githubReportsTable).where(eq(githubReportsTable.id, id)).limit(1);
+  if (!report || report.userId !== user.id) {
+    res.status(404).json({ error: "Report not found" });
+    return;
+  }
+  await db.delete(githubReportsTable).where(eq(githubReportsTable.id, id));
+  res.json({ message: "Report deleted" });
 });
 
 export default router;

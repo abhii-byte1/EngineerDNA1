@@ -44,6 +44,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     (req as AuthenticatedRequest).sessionToken = token;
     next();
   } catch (err) {
+    // FIX: Log details server-side only — never expose internal errors to client
     console.error("[auth] middleware error:", err);
     res.status(500).json({ error: "Internal server error" });
   }

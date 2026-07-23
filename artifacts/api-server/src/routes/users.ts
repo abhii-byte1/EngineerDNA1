@@ -1,10 +1,34 @@
 import { Router } from "express";
+import { z } from "zod";
 import { db } from "@workspace/db";
-import { usersTable } from "@workspace/db";
+import {
+  usersTable,
+  sessionsTable,
+  githubReportsTable,
+  resumeReportsTable,
+  portfolioReportsTable,
+  roadmapsTable,
+  milestonesTable,
+  journalEntriesTable,
+  mentorSessionsTable,
+  mentorMessagesTable,
+  goalsTable,
+} from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
 
 const router = Router();
+
+// ── Zod Schemas ───────────────────────────────────────────────────────────────
+const patchProfileSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  bio: z.string().max(1000).optional(),
+  targetRole: z.string().max(100).optional(),
+  experienceLevel: z.enum(["junior", "mid", "senior", "staff", "principal"]).optional(),
+  primaryTrack: z.string().max(100).optional(),
+  yearsOfExperience: z.number().int().min(0).max(50).optional(),
+  skills: z.array(z.string().max(50)).max(50).optional(),
+});
 
 // GET /api/users/profile
 router.get("/profile", requireAuth, (req, res) => {
@@ -15,15 +39,15 @@ router.get("/profile", requireAuth, (req, res) => {
 // PATCH /api/users/profile
 router.patch("/profile", requireAuth, async (req, res) => {
   const { user } = req as AuthenticatedRequest;
-  const { name, bio, targetRole, experienceLevel, primaryTrack, yearsOfExperience, skills } = req.body as {
-    name?: string;
-    bio?: string;
-    targetRole?: string;
-    experienceLevel?: string;
-    primaryTrack?: string;
-    yearsOfExperience?: number;
-    skills?: string[];
-  };
+
+  // FIX: Validate and sanitize all inputs with Zod
+  const parsed = patchProfileSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors });
+    return;
+  }
+
+  const { name, bio, targetRole, experienceLevel, primaryTrack, yearsOfExperience, skills } = parsed.data;
 
   const [updated] = await db
     .update(usersTable)
@@ -41,6 +65,51 @@ router.patch("/profile", requireAuth, async (req, res) => {
     .returning();
 
   res.json(JSON.parse(JSON.stringify(updated)));
+});
+
+// DELETE /api/users/me — GDPR "right to be forgotten": deletes all user data
+router.delete("/me", requireAuth, async (req, res) => {
+  const { user, sessionToken } = req as AuthenticatedRequest;
+  const userId = user.id;
+
+  try {
+    // Delete in dependency order (children before parents)
+    const userGoals = await db.select().from(goalsTable).where(eq(goalsTable.userId, userId));
+    for (const g of userGoals) {
+      await db.delete(goalsTable).where(eq(goalsTable.id, g.id));
+    }
+
+    const userJournals = await db.select().from(journalEntriesTable).where(eq(journalEntriesTable.userId, userId));
+    for (const j of userJournals) {
+      await db.delete(journalEntriesTable).where(eq(journalEntriesTable.id, j.id));
+    }
+
+    const userSessions = await db.select().from(mentorSessionsTable).where(eq(mentorSessionsTable.userId, userId));
+    for (const s of userSessions) {
+      await db.delete(mentorMessagesTable).where(eq(mentorMessagesTable.sessionId, s.id));
+      await db.delete(mentorSessionsTable).where(eq(mentorSessionsTable.id, s.id));
+    }
+
+    const userRoadmaps = await db.select().from(roadmapsTable).where(eq(roadmapsTable.userId, userId));
+    for (const r of userRoadmaps) {
+      await db.delete(milestonesTable).where(eq(milestonesTable.roadmapId, r.id));
+      await db.delete(roadmapsTable).where(eq(roadmapsTable.id, r.id));
+    }
+
+    await db.delete(githubReportsTable).where(eq(githubReportsTable.userId, userId));
+    await db.delete(resumeReportsTable).where(eq(resumeReportsTable.userId, userId));
+    await db.delete(portfolioReportsTable).where(eq(portfolioReportsTable.userId, userId));
+
+    // Delete all sessions then the user record
+    await db.delete(sessionsTable).where(eq(sessionsTable.userId, userId));
+    await db.delete(usersTable).where(eq(usersTable.id, userId));
+
+    res.clearCookie("session_token");
+    res.json({ message: "Account and all associated data deleted successfully." });
+  } catch (err) {
+    console.error("[users] delete account error:", err);
+    res.status(500).json({ error: "Failed to delete account. Please try again." });
+  }
 });
 
 export default router;

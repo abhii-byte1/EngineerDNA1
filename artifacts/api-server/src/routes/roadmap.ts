@@ -1,11 +1,26 @@
 import { Router } from "express";
+import { z } from "zod";
 import { db } from "@workspace/db";
 import { roadmapsTable, milestonesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
 import { gemini } from "../lib/ai";
+import { aiLimiter } from "../app";
 
 const router = Router();
+
+// ── Zod Schemas ───────────────────────────────────────────────────────────────
+const generateRoadmapSchema = z.object({
+  track: z.string().min(1, "track is required").max(100),
+  targetRole: z.string().min(1, "targetRole is required").max(150),
+  currentLevel: z.enum(["junior", "mid", "senior", "staff", "principal"], {
+    errorMap: () => ({ message: "currentLevel must be junior, mid, senior, staff, or principal" }),
+  }),
+});
+
+const updateMilestoneSchema = z.object({
+  completed: z.boolean(),
+});
 
 async function getRoadmapWithMilestones(userId: number) {
   const [roadmap] = await db.select().from(roadmapsTable).where(eq(roadmapsTable.userId, userId)).limit(1);
@@ -26,18 +41,17 @@ router.get("/", requireAuth, async (req, res) => {
 });
 
 // POST /api/roadmap — generate roadmap
-router.post("/", requireAuth, async (req, res) => {
+router.post("/", requireAuth, aiLimiter, async (req, res) => {
   const { user } = req as AuthenticatedRequest;
-  const { track, targetRole, currentLevel } = req.body as {
-    track: string;
-    targetRole: string;
-    currentLevel: string;
-  };
 
-  if (!track || !targetRole || !currentLevel) {
-    res.status(400).json({ error: "track, targetRole, and currentLevel are required" });
+  // FIX: Validate inputs with Zod
+  const parsed = generateRoadmapSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors });
     return;
   }
+
+  const { track, targetRole, currentLevel } = parsed.data;
 
   try {
     const response = await gemini.models.generateContent({
@@ -116,8 +130,9 @@ Generate 6-12 milestones spread across the timeline. Be specific and practical.`
     const result = await getRoadmapWithMilestones(user.id);
     res.json(JSON.parse(JSON.stringify(result)));
   } catch (err) {
+    // FIX: Log details server-side, return generic error to client
     console.error("[roadmap] generation error:", err);
-    res.status(500).json({ error: "Roadmap generation failed", details: err instanceof Error ? err.message : String(err) });
+    res.status(500).json({ error: "Roadmap generation failed. Please try again." });
   }
 });
 
@@ -125,7 +140,15 @@ Generate 6-12 milestones spread across the timeline. Be specific and practical.`
 router.patch("/milestones/:milestoneId", requireAuth, async (req, res) => {
   const { user } = req as AuthenticatedRequest;
   const milestoneId = parseInt(req.params.milestoneId as string, 10);
-  const { completed } = req.body as { completed: boolean };
+
+  // FIX: Validate with Zod
+  const parsed = updateMilestoneSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors });
+    return;
+  }
+
+  const { completed } = parsed.data;
 
   const [milestone] = await db.select().from(milestonesTable).where(eq(milestonesTable.id, milestoneId)).limit(1);
   if (!milestone) {

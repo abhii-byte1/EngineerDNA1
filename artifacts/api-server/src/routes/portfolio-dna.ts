@@ -1,25 +1,81 @@
 import { Router } from "express";
+import { z } from "zod";
 import { db } from "@workspace/db";
 import { portfolioReportsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
 import { gemini } from "../lib/ai";
+import { aiLimiter } from "../app";
 
 const router = Router();
 
-// POST /api/portfolio-dna/analyze
-router.post("/analyze", requireAuth, async (req, res) => {
-  const { user } = req as AuthenticatedRequest;
-  const { portfolioUrl } = req.body as { portfolioUrl: string };
+// ── SSRF Protection ───────────────────────────────────────────────────────────
+// FIX: Block requests to private/internal IP ranges to prevent SSRF attacks
+const PRIVATE_IP_PATTERNS = [
+  /^localhost$/i,
+  /^127\./,
+  /^10\./,
+  /^172\.(1[6-9]|2[0-9]|3[0-1])\./,
+  /^192\.168\./,
+  /^169\.254\./, // Link-local (AWS metadata endpoint)
+  /^::1$/,       // IPv6 loopback
+  /^fc00:/i,     // IPv6 private
+  /^fd[0-9a-f]{2}:/i, // IPv6 private
+];
 
-  if (!portfolioUrl?.trim()) {
-    res.status(400).json({ error: "portfolioUrl is required" });
+function isSafeUrl(rawUrl: string): { safe: boolean; reason?: string } {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    return { safe: false, reason: "Invalid URL format" };
+  }
+
+  if (!["http:", "https:"].includes(parsed.protocol)) {
+    return { safe: false, reason: "Only http and https URLs are allowed" };
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+  for (const pattern of PRIVATE_IP_PATTERNS) {
+    if (pattern.test(hostname)) {
+      return { safe: false, reason: "Requests to private/internal network addresses are not allowed" };
+    }
+  }
+
+  return { safe: true };
+}
+
+// ── Zod Schemas ───────────────────────────────────────────────────────────────
+const analyzeSchema = z.object({
+  portfolioUrl: z
+    .string()
+    .url("Must be a valid URL")
+    .max(500, "URL is too long"),
+});
+
+// POST /api/portfolio-dna/analyze
+router.post("/analyze", requireAuth, aiLimiter, async (req, res) => {
+  const { user } = req as AuthenticatedRequest;
+
+  // FIX: Validate URL input with Zod
+  const parsed = analyzeSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors });
+    return;
+  }
+
+  const { portfolioUrl } = parsed.data;
+
+  // FIX: SSRF protection — block private/internal addresses
+  const safeCheck = isSafeUrl(portfolioUrl);
+  if (!safeCheck.safe) {
+    res.status(400).json({ error: safeCheck.reason ?? "Invalid portfolio URL" });
     return;
   }
 
   const [report] = await db
     .insert(portfolioReportsTable)
-    .values({ userId: user.id, portfolioUrl: portfolioUrl.trim(), status: "analyzing" })
+    .values({ userId: user.id, portfolioUrl, status: "analyzing" })
     .returning();
 
   try {
@@ -93,9 +149,10 @@ Return ONLY valid JSON:
 
     res.json(JSON.parse(JSON.stringify(updated)));
   } catch (err) {
+    // FIX: Log details server-side, return generic error to client
     console.error("[portfolio-dna] analysis error:", err);
     await db.update(portfolioReportsTable).set({ status: "failed" }).where(eq(portfolioReportsTable.id, report.id));
-    res.status(500).json({ error: "Analysis failed", details: err instanceof Error ? err.message : String(err) });
+    res.status(500).json({ error: "Analysis failed. Please try again." });
   }
 });
 
@@ -120,6 +177,19 @@ router.get("/reports/:id", requireAuth, async (req, res) => {
     return;
   }
   res.json(JSON.parse(JSON.stringify(report)));
+});
+
+// DELETE /api/portfolio-dna/reports/:id
+router.delete("/reports/:id", requireAuth, async (req, res) => {
+  const { user } = req as AuthenticatedRequest;
+  const id = parseInt(req.params.id as string, 10);
+  const [report] = await db.select().from(portfolioReportsTable).where(eq(portfolioReportsTable.id, id)).limit(1);
+  if (!report || report.userId !== user.id) {
+    res.status(404).json({ error: "Report not found" });
+    return;
+  }
+  await db.delete(portfolioReportsTable).where(eq(portfolioReportsTable.id, id));
+  res.json({ message: "Report deleted" });
 });
 
 export default router;
