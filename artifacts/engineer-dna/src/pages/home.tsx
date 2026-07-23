@@ -201,33 +201,36 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {[
               {
-                color: "emerald",
+                colorClasses: "border-emerald-500/20 bg-emerald-500/5",
+                iconBgClasses: "bg-emerald-500/10",
                 icon: <Layers className="w-5 h-5 text-emerald-400" />,
                 title: "Read-only GitHub access",
                 desc: "We request only read:user and user:email OAuth scopes. GitHub enforces this — we literally cannot write to your account."
               },
               {
-                color: "blue",
+                colorClasses: "border-blue-500/20 bg-blue-500/5",
+                iconBgClasses: "bg-blue-500/10",
                 icon: <Database className="w-5 h-5 text-blue-400" />,
                 title: "Data stays yours",
                 desc: "Your analysis, journal entries, and resume are stored only to power your dashboard. Never sold, never shared with advertisers."
               },
               {
-                color: "violet",
+                colorClasses: "border-violet-500/20 bg-violet-500/5",
+                iconBgClasses: "bg-violet-500/10",
                 icon: <Code2 className="w-5 h-5 text-violet-400" />,
                 title: "Delete anytime",
                 desc: "One click in Settings removes your account and every byte of data permanently. No hoops, no waiting period."
               }
-            ].map(({ color, icon, title, desc }) => (
+            ].map(({ colorClasses, iconBgClasses, icon, title, desc }) => (
               <motion.div
                 key={title}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4 }}
-                className={`p-6 rounded-xl border border-${color}-500/20 bg-${color}-500/5`}
+                className={`p-6 rounded-xl border ${colorClasses}`}
               >
-                <div className={`w-10 h-10 rounded-lg bg-${color}-500/10 flex items-center justify-center mb-4`}>
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-4 ${iconBgClasses}`}>
                   {icon}
                 </div>
                 <h3 className="font-bold text-lg mb-2">{title}</h3>
