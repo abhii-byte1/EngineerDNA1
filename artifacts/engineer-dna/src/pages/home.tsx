@@ -179,6 +179,81 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── Trust & Privacy Section ── */}
+      <section className="py-24 border-t border-border bg-card/20">
+        <div className="container mx-auto px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-14"
+          >
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono mb-4">
+              <span className="w-2 h-2 rounded-full bg-emerald-400" /> Privacy First
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">Your data. Your control.</h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              We ask for the minimum possible GitHub permissions. Here's exactly what we can and cannot do — no hidden fine print.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {[
+              {
+                color: "emerald",
+                icon: <Layers className="w-5 h-5 text-emerald-400" />,
+                title: "Read-only GitHub access",
+                desc: "We request only read:user and user:email OAuth scopes. GitHub enforces this — we literally cannot write to your account."
+              },
+              {
+                color: "blue",
+                icon: <Database className="w-5 h-5 text-blue-400" />,
+                title: "Data stays yours",
+                desc: "Your analysis, journal entries, and resume are stored only to power your dashboard. Never sold, never shared with advertisers."
+              },
+              {
+                color: "violet",
+                icon: <Code2 className="w-5 h-5 text-violet-400" />,
+                title: "Delete anytime",
+                desc: "One click in Settings removes your account and every byte of data permanently. No hoops, no waiting period."
+              }
+            ].map(({ color, icon, title, desc }) => (
+              <motion.div
+                key={title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4 }}
+                className={`p-6 rounded-xl border border-${color}-500/20 bg-${color}-500/5`}
+              >
+                <div className={`w-10 h-10 rounded-lg bg-${color}-500/10 flex items-center justify-center mb-4`}>
+                  {icon}
+                </div>
+                <h3 className="font-bold text-lg mb-2">{title}</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">{desc}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* GitHub scope callout */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="mt-10 max-w-2xl mx-auto flex items-center gap-4 p-4 rounded-xl bg-muted/40 border border-border font-mono text-sm"
+          >
+            <Github className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+            <div>
+              <span className="text-muted-foreground">OAuth scopes we request: </span>
+              <span className="text-primary font-semibold">read:user user:email</span>
+              <span className="text-muted-foreground"> — public profile and email only.</span>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="py-12 border-t border-border bg-card">
         <div className="container mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
@@ -196,6 +271,7 @@ export default function Home() {
     </div>
   )
 }
+
 
 function ModuleCard({ icon, title, description, command }: { icon: React.ReactNode, title: string, description: string, command: string }) {
   return (
