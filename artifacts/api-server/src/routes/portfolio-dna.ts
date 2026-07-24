@@ -1,3 +1,6 @@
+// TODO: [Product Discussion] Should we kill Portfolio DNA?
+// Many users don't have portfolios.
+
 import { Router } from "express";
 import { z } from "zod";
 import { db } from "@workspace/db";
