@@ -1,9 +1,7 @@
 export * from "./users";
 export * from "./sessions";
 export * from "./github-reports";
-export * from "./portfolio-reports";
 export * from "./resume-reports";
 export * from "./roadmaps";
-export * from "./journal";
-export * from "./mentor";
 export * from "./goals";
+

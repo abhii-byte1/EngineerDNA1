@@ -4,12 +4,11 @@ import { useGetMe, useLogout } from "@workspace/api-client-react"
 import { 
   LayoutDashboard, 
   Github, 
-  Globe, 
-  FileText, 
+  Flame, 
+  Trophy, 
   Map, 
-  BookOpen, 
-  MessageSquare, 
   Target, 
+  BrainCircuit, 
   Settings,
   LogOut
 } from "lucide-react"
@@ -18,12 +17,11 @@ import { cn } from "@/lib/utils"
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/github-dna", label: "GitHub DNA", icon: Github },
-  { href: "/portfolio-dna", label: "Portfolio DNA", icon: Globe },
-  { href: "/resume-dna", label: "Resume DNA", icon: FileText },
+  { href: "/roast", label: "Roast", icon: Flame },
+  { href: "/leaderboard", label: "Leaderboard", icon: Trophy },
   { href: "/roadmap", label: "Roadmap", icon: Map },
-  { href: "/journal", label: "Journal", icon: BookOpen },
   { href: "/goals", label: "Goals", icon: Target },
-  { href: "/mentor", label: "Mentor", icon: MessageSquare },
+  { href: "/interview-simulator", label: "Interview Simulator", icon: BrainCircuit },
 ]
 
 export function AppLayout({ children }: { children: React.ReactNode }) {

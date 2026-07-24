@@ -80,11 +80,10 @@ export default function Dashboard() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <MetricCard title="Active Goals" value={activeGoals.toString()} sub={`${completedGoals} completed`} icon={<Target />} />
-        <MetricCard title="Journal Streak" value={`${journalStreak} days`} sub="Consistency matters" icon={<Activity />} />
         <MetricCard title="Current Standing" value={currentStandingBand?.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || "New"} icon={getBandIcon()} />
-        <MetricCard title="Mentor Sessions" value={summary.mentorSessions.toString()} sub="AI-assisted guidance" icon={<Zap />} />
+        <MetricCard title="GitHub Status" value={githubAnalyzed ? "Analyzed" : "Pending"} sub="Primary Growth Engine" icon={<Github />} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -92,23 +91,17 @@ export default function Dashboard() {
           <Card>
             <CardHeader>
               <CardTitle>Core Modules</CardTitle>
-              <CardDescription>Analysis status across your professional footprint</CardDescription>
+              <CardDescription>Analysis status across your growth engine</CardDescription>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <ModuleStatusCard 
-                title="GitHub" 
+                title="GitHub DNA" 
                 icon={<Github className="w-5 h-5" />} 
                 isAnalyzed={githubAnalyzed} 
                 href="/github-dna" 
               />
               <ModuleStatusCard 
-                title="Portfolio" 
-                icon={<Globe className="w-5 h-5" />} 
-                isAnalyzed={portfolioAnalyzed} 
-                href="/portfolio-dna" 
-              />
-              <ModuleStatusCard 
-                title="Resume" 
+                title="Resume DNA" 
                 icon={<FileText className="w-5 h-5" />} 
                 isAnalyzed={resumeAnalyzed} 
                 href="/resume-dna" 

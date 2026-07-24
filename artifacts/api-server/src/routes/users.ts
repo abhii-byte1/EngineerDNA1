@@ -6,12 +6,8 @@ import {
   sessionsTable,
   githubReportsTable,
   resumeReportsTable,
-  portfolioReportsTable,
   roadmapsTable,
   milestonesTable,
-  journalEntriesTable,
-  mentorSessionsTable,
-  mentorMessagesTable,
   goalsTable,
 } from "@workspace/db";
 import { eq } from "drizzle-orm";
@@ -79,17 +75,6 @@ router.delete("/me", requireAuth, async (req, res) => {
       await db.delete(goalsTable).where(eq(goalsTable.id, g.id));
     }
 
-    const userJournals = await db.select().from(journalEntriesTable).where(eq(journalEntriesTable.userId, userId));
-    for (const j of userJournals) {
-      await db.delete(journalEntriesTable).where(eq(journalEntriesTable.id, j.id));
-    }
-
-    const userSessions = await db.select().from(mentorSessionsTable).where(eq(mentorSessionsTable.userId, userId));
-    for (const s of userSessions) {
-      await db.delete(mentorMessagesTable).where(eq(mentorMessagesTable.sessionId, s.id));
-      await db.delete(mentorSessionsTable).where(eq(mentorSessionsTable.id, s.id));
-    }
-
     const userRoadmaps = await db.select().from(roadmapsTable).where(eq(roadmapsTable.userId, userId));
     for (const r of userRoadmaps) {
       await db.delete(milestonesTable).where(eq(milestonesTable.roadmapId, r.id));
@@ -98,7 +83,6 @@ router.delete("/me", requireAuth, async (req, res) => {
 
     await db.delete(githubReportsTable).where(eq(githubReportsTable.userId, userId));
     await db.delete(resumeReportsTable).where(eq(resumeReportsTable.userId, userId));
-    await db.delete(portfolioReportsTable).where(eq(portfolioReportsTable.userId, userId));
 
     // Delete all sessions then the user record
     await db.delete(sessionsTable).where(eq(sessionsTable.userId, userId));

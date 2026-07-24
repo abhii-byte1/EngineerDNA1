@@ -10,11 +10,8 @@ import Home from '@/pages/home';
 import Login from '@/pages/login';
 import Dashboard from '@/pages/dashboard';
 import GithubDNA from '@/pages/github-dna';
-import PortfolioDNA from '@/pages/portfolio-dna';
 import ResumeDNA from '@/pages/resume-dna';
 import RoadmapPage from '@/pages/roadmap';
-import JournalPage from '@/pages/journal';
-import MentorPage from '@/pages/mentor';
 import GoalsPage from '@/pages/goals';
 import SettingsPage from '@/pages/settings';
 
@@ -42,11 +39,8 @@ function Router() {
       
       <Route path="/dashboard"><ProtectedRoute component={Dashboard} /></Route>
       <Route path="/github-dna"><ProtectedRoute component={GithubDNA} /></Route>
-      <Route path="/portfolio-dna"><ProtectedRoute component={PortfolioDNA} /></Route>
       <Route path="/resume-dna"><ProtectedRoute component={ResumeDNA} /></Route>
       <Route path="/roadmap"><ProtectedRoute component={RoadmapPage} /></Route>
-      <Route path="/journal"><ProtectedRoute component={JournalPage} /></Route>
-      <Route path="/mentor"><ProtectedRoute component={MentorPage} /></Route>
       <Route path="/goals"><ProtectedRoute component={GoalsPage} /></Route>
       <Route path="/settings"><ProtectedRoute component={SettingsPage} /></Route>
       

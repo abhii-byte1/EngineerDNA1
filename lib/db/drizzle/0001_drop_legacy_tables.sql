@@ -1,0 +1,6 @@
+DROP TABLE IF EXISTS "portfolio_reports" CASCADE;
+DROP TABLE IF EXISTS "journal_entries" CASCADE;
+DROP TABLE IF EXISTS "mentor_messages" CASCADE;
+DROP TABLE IF EXISTS "mentor_sessions" CASCADE;
+DROP TABLE IF EXISTS "messages" CASCADE;
+DROP TABLE IF EXISTS "conversations" CASCADE;
