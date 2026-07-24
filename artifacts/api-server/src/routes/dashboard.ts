@@ -13,6 +13,8 @@ import {
 import { eq, desc, and, gte } from "drizzle-orm";
 import { requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
 
+import { calculateJournalStreak } from "../lib/streak";
+
 const router = Router();
 
 // GET /api/dashboard/summary
@@ -65,14 +67,7 @@ router.get("/summary", requireAuth, async (req, res) => {
   const completedGoals = goals.filter((g) => g.status === "completed").length;
 
   // Journal streak: count consecutive weeks with entries
-  let journalStreak = 0;
-  const now = new Date();
-  for (const entry of journalEntries) {
-    const entryDate = new Date(entry.weekOf);
-    const weeksAgo = Math.floor((now.getTime() - entryDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
-    if (weeksAgo <= journalStreak + 1) journalStreak++;
-    else break;
-  }
+  const journalStreak = calculateJournalStreak(journalEntries);
 
   // Collect recent insights from all reports
   const recentInsights: string[] = [];
