@@ -4,8 +4,8 @@ import { db } from "@workspace/db";
 import { portfolioReportsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
-import { gemini } from "../lib/ai";
 import { aiLimiter } from "../lib/rate-limiters";
+import { runAnalysis } from "../lib/run-analysis";
 
 const router = Router();
 
@@ -73,29 +73,26 @@ router.post("/analyze", requireAuth, aiLimiter, async (req, res) => {
     return;
   }
 
-  const [report] = await db
-    .insert(portfolioReportsTable)
-    .values({ userId: user.id, portfolioUrl, status: "analyzing" })
-    .returning();
-
   try {
-    // Fetch portfolio page content for analysis
-    let pageContent = "";
-    try {
-      const pageRes = await fetch(portfolioUrl, {
-        headers: { "User-Agent": "Mozilla/5.0 EngineerDNA/1.0" },
-        signal: AbortSignal.timeout(10000),
-      });
-      pageContent = await pageRes.text();
-      // Truncate to avoid token limits
-      pageContent = pageContent.slice(0, 8000);
-    } catch {
-      pageContent = "(Unable to fetch portfolio content — analyzing URL only)";
-    }
+    const { row: updated } = await runAnalysis({
+      table: portfolioReportsTable,
+      insertValues: { userId: user.id, portfolioUrl, status: "analyzing" },
+      buildPrompt: async () => {
+        // Fetch portfolio page content for analysis
+        let pageContent = "";
+        try {
+          const pageRes = await fetch(portfolioUrl, {
+            headers: { "User-Agent": "Mozilla/5.0 EngineerDNA/1.0" },
+            signal: AbortSignal.timeout(10000),
+          });
+          pageContent = await pageRes.text();
+          // Truncate to avoid token limits
+          pageContent = pageContent.slice(0, 8000);
+        } catch {
+          pageContent = "(Unable to fetch portfolio content — analyzing URL only)";
+        }
 
-    const response = await gemini.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: `Analyze this portfolio website and return a JSON assessment.
+        return `Analyze this portfolio website and return a JSON assessment.
 
 URL: ${portfolioUrl}
 Page Content (first 8000 chars): ${pageContent}
@@ -121,18 +118,10 @@ Return ONLY valid JSON:
       "estimatedImprovement": "<expected improvement>"
     }
   ]
-}`,
-      config: {
-        responseMimeType: "application/json",
-        systemInstruction: "You are an expert web developer and UX/performance analyst. You evaluate engineering portfolios on performance, accessibility, SEO, and UI/UX quality.",
+}`;
       },
-    });
-
-    const analysis = JSON.parse(response.text ?? "{}") as Record<string, unknown>;
-
-    const [updated] = await db
-      .update(portfolioReportsTable)
-      .set({
+      systemInstruction: "You are an expert web developer and UX/performance analyst. You evaluate engineering portfolios on performance, accessibility, SEO, and UI/UX quality.",
+      mapResult: (analysis) => ({
         status: "completed",
         overallScore: analysis.overallScore as number,
         performanceScore: analysis.performanceScore as number,
@@ -143,16 +132,13 @@ Return ONLY valid JSON:
         weaknesses: (analysis.weaknesses as string[]) ?? [],
         insights: (analysis.insights as import("../../../../lib/db/src/schema/github-reports").AnalysisInsight[]) ?? [],
         recommendations: (analysis.recommendations as string[]) ?? [],
-      })
-      .where(eq(portfolioReportsTable.id, report.id))
-      .returning();
+      }),
+    });
 
     res.json(JSON.parse(JSON.stringify(updated)));
   } catch (err) {
-    // FIX: Log details server-side, return generic error to client
-    console.error("[portfolio-dna] analysis error:", err);
-    await db.update(portfolioReportsTable).set({ status: "failed" }).where(eq(portfolioReportsTable.id, report.id));
-    res.status(500).json({ error: "Analysis failed. Please try again." });
+    const errorMsg = err instanceof Error ? err.message : "Analysis failed. Please try again.";
+    res.status(500).json({ error: errorMsg });
   }
 });
 

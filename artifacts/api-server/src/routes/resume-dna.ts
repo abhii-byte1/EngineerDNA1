@@ -4,8 +4,8 @@ import { db } from "@workspace/db";
 import { resumeReportsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
-import { gemini } from "../lib/ai";
 import { aiLimiter } from "../lib/rate-limiters";
+import { runAnalysis } from "../lib/run-analysis";
 
 const router = Router();
 
@@ -32,15 +32,11 @@ router.post("/analyze", requireAuth, aiLimiter, async (req, res) => {
 
   const { resumeText, targetRole } = parsed.data;
 
-  const [report] = await db
-    .insert(resumeReportsTable)
-    .values({ userId: user.id, resumeText, targetRole: targetRole ?? null, status: "analyzing" })
-    .returning();
-
   try {
-    const response = await gemini.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: `Analyze this engineering resume and return a JSON assessment.
+    const { row: updated } = await runAnalysis({
+      table: resumeReportsTable,
+      insertValues: { userId: user.id, resumeText, targetRole: targetRole ?? null, status: "analyzing" },
+      buildPrompt: () => `Analyze this engineering resume and return a JSON assessment.
 
 ${targetRole ? `Target Role: ${targetRole}` : ""}
 
@@ -70,17 +66,8 @@ Return ONLY valid JSON:
     }
   ]
 }`,
-      config: {
-        responseMimeType: "application/json",
-        systemInstruction: "You are a senior engineering hiring manager and technical recruiter with 15 years of experience reviewing software engineering resumes. You give brutally honest, specific, actionable feedback.",
-      },
-    });
-
-    const analysis = JSON.parse(response.text ?? "{}") as Record<string, unknown>;
-
-    const [updated] = await db
-      .update(resumeReportsTable)
-      .set({
+      systemInstruction: "You are a senior engineering hiring manager and technical recruiter with 15 years of experience reviewing software engineering resumes. You give brutally honest, specific, actionable feedback.",
+      mapResult: (analysis) => ({
         status: "completed",
         overallScore: analysis.overallScore as number,
         writingQualityScore: analysis.writingQualityScore as number,
@@ -92,16 +79,13 @@ Return ONLY valid JSON:
         weakClaims: (analysis.weakClaims as string[]) ?? [],
         improvedBullets: (analysis.improvedBullets as string[]) ?? [],
         insights: (analysis.insights as import("../../../../lib/db/src/schema/github-reports").AnalysisInsight[]) ?? [],
-      })
-      .where(eq(resumeReportsTable.id, report.id))
-      .returning();
+      }),
+    });
 
     res.json(JSON.parse(JSON.stringify(updated)));
   } catch (err) {
-    // FIX: Log details server-side, return generic error to client
-    console.error("[resume-dna] analysis error:", err);
-    await db.update(resumeReportsTable).set({ status: "failed" }).where(eq(resumeReportsTable.id, report.id));
-    res.status(500).json({ error: "Analysis failed. Please try again." });
+    const errorMsg = err instanceof Error ? err.message : "Analysis failed. Please try again.";
+    res.status(500).json({ error: errorMsg });
   }
 });
 

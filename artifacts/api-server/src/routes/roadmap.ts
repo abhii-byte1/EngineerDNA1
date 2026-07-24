@@ -4,8 +4,8 @@ import { db } from "@workspace/db";
 import { roadmapsTable, milestonesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
-import { gemini } from "../lib/ai";
 import { aiLimiter } from "../lib/rate-limiters";
+import { runAnalysis } from "../lib/run-analysis";
 
 const router = Router();
 
@@ -54,9 +54,22 @@ router.post("/", requireAuth, aiLimiter, async (req, res) => {
   const { track, targetRole, currentLevel } = parsed.data;
 
   try {
-    const response = await gemini.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: `Create a comprehensive engineering growth roadmap.
+    // Delete existing roadmap if any before generating new one
+    const existing = await db.select().from(roadmapsTable).where(eq(roadmapsTable.userId, user.id)).limit(1);
+    if (existing.length > 0) {
+      await db.delete(milestonesTable).where(eq(milestonesTable.roadmapId, existing[0].id));
+      await db.delete(roadmapsTable).where(eq(roadmapsTable.userId, user.id));
+    }
+
+    const { row: roadmap, analysis: plan } = await runAnalysis({
+      table: roadmapsTable,
+      insertValues: {
+        userId: user.id,
+        track,
+        targetRole,
+        currentLevel,
+      },
+      buildPrompt: () => `Create a comprehensive engineering growth roadmap.
 
 Track: ${track}
 Target Role: ${targetRole}
@@ -82,36 +95,16 @@ Return ONLY valid JSON:
 }
 
 Generate 6-12 milestones spread across the timeline. Be specific and practical.`,
-      config: {
-        responseMimeType: "application/json",
-        systemInstruction: "You are an expert engineering career coach who creates precise, actionable roadmaps for software engineers. Your roadmaps are week-by-week, milestone-driven, and deeply practical.",
-      },
+      systemInstruction: "You are an expert engineering career coach who creates precise, actionable roadmaps for software engineers. Your roadmaps are week-by-week, milestone-driven, and deeply practical.",
+      mapResult: (p) => ({
+        estimatedWeeks: p.estimatedWeeks as number,
+        weeklyGoal: p.weeklyGoal as string,
+        monthlyGoal: p.monthlyGoal as string,
+        recommendedProjects: (p.recommendedProjects as string[]) ?? [],
+        recommendedCourses: (p.recommendedCourses as string[]) ?? [],
+        recommendedBooks: (p.recommendedBooks as string[]) ?? [],
+      }),
     });
-
-    const plan = JSON.parse(response.text ?? "{}") as Record<string, unknown>;
-
-    // Delete existing roadmap if any
-    const existing = await db.select().from(roadmapsTable).where(eq(roadmapsTable.userId, user.id)).limit(1);
-    if (existing.length > 0) {
-      await db.delete(milestonesTable).where(eq(milestonesTable.roadmapId, existing[0].id));
-      await db.delete(roadmapsTable).where(eq(roadmapsTable.userId, user.id));
-    }
-
-    const [roadmap] = await db
-      .insert(roadmapsTable)
-      .values({
-        userId: user.id,
-        track,
-        targetRole,
-        currentLevel,
-        estimatedWeeks: plan.estimatedWeeks as number,
-        weeklyGoal: plan.weeklyGoal as string,
-        monthlyGoal: plan.monthlyGoal as string,
-        recommendedProjects: (plan.recommendedProjects as string[]) ?? [],
-        recommendedCourses: (plan.recommendedCourses as string[]) ?? [],
-        recommendedBooks: (plan.recommendedBooks as string[]) ?? [],
-      })
-      .returning();
 
     const milestoneData = (plan.milestones as Record<string, unknown>[]) ?? [];
     if (milestoneData.length > 0) {
@@ -130,9 +123,8 @@ Generate 6-12 milestones spread across the timeline. Be specific and practical.`
     const result = await getRoadmapWithMilestones(user.id);
     res.json(JSON.parse(JSON.stringify(result)));
   } catch (err) {
-    // FIX: Log details server-side, return generic error to client
-    console.error("[roadmap] generation error:", err);
-    res.status(500).json({ error: "Roadmap generation failed. Please try again." });
+    const errorMsg = err instanceof Error ? err.message : "Roadmap generation failed. Please try again.";
+    res.status(500).json({ error: errorMsg });
   }
 });
 

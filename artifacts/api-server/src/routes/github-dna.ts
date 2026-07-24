@@ -4,8 +4,8 @@ import { db } from "@workspace/db";
 import { githubReportsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { requireAuth, type AuthenticatedRequest } from "../middlewares/auth";
-import { gemini } from "../lib/ai";
 import { aiLimiter } from "../lib/rate-limiters";
+import { runAnalysis } from "../lib/run-analysis";
 
 const router = Router();
 
@@ -32,46 +32,41 @@ router.post("/analyze", requireAuth, aiLimiter, async (req, res) => {
 
   const { githubUsername } = parsed.data;
 
-  const [report] = await db
-    .insert(githubReportsTable)
-    .values({ userId: user.id, githubUsername, status: "analyzing" })
-    .returning();
-
   try {
-    const [userRes, reposRes] = await Promise.all([
-      fetch(`https://api.github.com/users/${githubUsername}`, { headers: { "User-Agent": "EngineerDNA/1.0" } }),
-      fetch(`https://api.github.com/users/${githubUsername}/repos?per_page=50&sort=updated`, { headers: { "User-Agent": "EngineerDNA/1.0" } }),
-    ]);
+    const { row: updated } = await runAnalysis({
+      table: githubReportsTable,
+      insertValues: { userId: user.id, githubUsername, status: "analyzing" },
+      buildPrompt: async () => {
+        const [userRes, reposRes] = await Promise.all([
+          fetch(`https://api.github.com/users/${githubUsername}`, { headers: { "User-Agent": "EngineerDNA/1.0" } }),
+          fetch(`https://api.github.com/users/${githubUsername}/repos?per_page=50&sort=updated`, { headers: { "User-Agent": "EngineerDNA/1.0" } }),
+        ]);
 
-    if (!userRes.ok) {
-      await db.update(githubReportsTable).set({ status: "failed" }).where(eq(githubReportsTable.id, report.id));
-      res.status(404).json({ error: "GitHub user not found" });
-      return;
-    }
+        if (!userRes.ok) {
+          throw new Error("GitHub user not found");
+        }
 
-    const ghUser = (await userRes.json()) as Record<string, unknown>;
-    const repos = (reposRes.ok ? await reposRes.json() : []) as Record<string, unknown>[];
+        const ghUser = (await userRes.json()) as Record<string, unknown>;
+        const repos = (reposRes.ok ? await reposRes.json() : []) as Record<string, unknown>[];
 
-    const repoSummary = repos.slice(0, 25).map((r) => ({
-      name: r.name,
-      language: r.language,
-      stars: r.stargazers_count,
-      forked: r.fork,
-      description: r.description,
-      topics: r.topics,
-      size: r.size,
-      updated: r.updated_at,
-    }));
+        const repoSummary = repos.slice(0, 25).map((r) => ({
+          name: r.name,
+          language: r.language,
+          stars: r.stargazers_count,
+          forked: r.fork,
+          description: r.description,
+          topics: r.topics,
+          size: r.size,
+          updated: r.updated_at,
+        }));
 
-    const langCounts: Record<string, number> = {};
-    for (const r of repos) {
-      if (r.language) langCounts[r.language as string] = (langCounts[r.language as string] ?? 0) + 1;
-    }
-    const topLanguages = Object.entries(langCounts).sort((a, b) => b[1] - a[1]).map(([l]) => l).slice(0, 10);
+        const langCounts: Record<string, number> = {};
+        for (const r of repos) {
+          if (r.language) langCounts[r.language as string] = (langCounts[r.language as string] ?? 0) + 1;
+        }
+        const topLanguages = Object.entries(langCounts).sort((a, b) => b[1] - a[1]).map(([l]) => l).slice(0, 10);
 
-    const response = await gemini.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: `Analyze this GitHub profile and return a JSON engineering assessment.
+        const promptText = `Analyze this GitHub profile and return a JSON engineering assessment.
 
 GitHub Profile: ${JSON.stringify(ghUser)}
 Repositories (most recent 25): ${JSON.stringify(repoSummary)}
@@ -97,39 +92,33 @@ Return ONLY valid JSON with this exact structure:
       "estimatedImprovement": "<expected improvement if addressed>"
     }
   ]
-}`,
-      config: {
-        responseMimeType: "application/json",
-        systemInstruction: "You are a brutally honest, expert engineering career coach. You analyze GitHub profiles with surgical precision to identify strengths, weaknesses, and growth opportunities. Be specific — reference actual repo names, languages, and patterns. Never be generic.",
+}`;
+        return { prompt: promptText, context: { totalRepositories: ghUser.public_repos } };
       },
-    });
-
-    const analysis = JSON.parse(response.text ?? "{}") as Record<string, unknown>;
-
-    const [updated] = await db
-      .update(githubReportsTable)
-      .set({
+      systemInstruction: "You are a brutally honest, expert engineering career coach. You analyze GitHub profiles with surgical precision to identify strengths, weaknesses, and growth opportunities. Be specific — reference actual repo names, languages, and patterns. Never be generic.",
+      mapResult: (analysis, context) => ({
         status: "completed",
         overallScore: analysis.overallScore as number,
         strengths: (analysis.strengths as string[]) ?? [],
         weaknesses: (analysis.weaknesses as string[]) ?? [],
         techStack: (analysis.techStack as string[]) ?? [],
-        totalRepositories: ghUser.public_repos as number,
-        topLanguages,
+        totalRepositories: (context?.totalRepositories as number) ?? 0,
+        topLanguages: (analysis.techStack as string[])?.slice(0,10) ?? [],
         insights: (analysis.insights as import("../../../../lib/db/src/schema/github-reports").AnalysisInsight[]) ?? [],
         architectureIssues: (analysis.architectureIssues as string[]) ?? [],
         recommendations: (analysis.recommendations as string[]) ?? [],
         growthAreas: (analysis.growthAreas as string[]) ?? [],
-      })
-      .where(eq(githubReportsTable.id, report.id))
-      .returning();
+      }),
+    });
 
     res.json(JSON.parse(JSON.stringify(updated)));
   } catch (err) {
-    // FIX: Log details server-side, return generic error to client
-    console.error("[github-dna] analysis error:", err);
-    await db.update(githubReportsTable).set({ status: "failed" }).where(eq(githubReportsTable.id, report.id));
-    res.status(500).json({ error: "Analysis failed. Please try again." });
+    const errorMsg = err instanceof Error ? err.message : "Analysis failed. Please try again.";
+    if (errorMsg === "GitHub user not found") {
+      res.status(404).json({ error: errorMsg });
+    } else {
+      res.status(500).json({ error: errorMsg });
+    }
   }
 });
 
