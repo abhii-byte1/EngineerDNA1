@@ -4,4 +4,6 @@ export * from "./github-reports";
 export * from "./resume-reports";
 export * from "./roadmaps";
 export * from "./goals";
+export * from "./interview-sessions";
+
 

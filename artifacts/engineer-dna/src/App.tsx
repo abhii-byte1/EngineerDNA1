@@ -18,6 +18,7 @@ import PublicProfile from '@/pages/public-profile';
 import RoastPage from '@/pages/roast';
 import LeaderboardPage from '@/pages/leaderboard';
 import ComparePage from '@/pages/compare';
+import InterviewSimulator from '@/pages/interview-simulator';
 
 // Layout & Auth
 import { AppLayout } from '@/components/layout';
@@ -50,6 +51,7 @@ function Router() {
       <Route path="/resume-dna"><ProtectedRoute component={ResumeDNA} /></Route>
       <Route path="/roadmap"><ProtectedRoute component={RoadmapPage} /></Route>
       <Route path="/goals"><ProtectedRoute component={GoalsPage} /></Route>
+      <Route path="/interview-simulator"><ProtectedRoute component={InterviewSimulator} /></Route>
       <Route path="/settings"><ProtectedRoute component={SettingsPage} /></Route>
       
       <Route component={NotFound} />

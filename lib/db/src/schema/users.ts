@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, timestamp, jsonb, boolean } from "drizzle-orm/pg-core";
 
 export const usersTable = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -13,6 +13,7 @@ export const usersTable = pgTable("users", {
   primaryTrack: text("primary_track"),
   yearsOfExperience: integer("years_of_experience"),
   skills: jsonb("skills").$type<string[]>(),
+  emailNotificationsOptIn: boolean("email_notifications_opt_in").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

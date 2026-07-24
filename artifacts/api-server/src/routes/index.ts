@@ -11,6 +11,7 @@ import publicRouter from "./public";
 import roastRouter from "./roast";
 import badgeRouter from "./badge";
 import leaderboardRouter from "./leaderboard";
+import interviewSimulatorRouter from "./interview-simulator";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,8 @@ router.use("/public", publicRouter);
 router.use("/roast", roastRouter);
 router.use("/badge", badgeRouter);
 router.use("/leaderboard", leaderboardRouter);
+
+// Bounded AI Interview Simulator
+router.use("/interview-simulator", interviewSimulatorRouter);
 
 export default router;
