@@ -14,6 +14,8 @@ export const usersTable = pgTable("users", {
   yearsOfExperience: integer("years_of_experience"),
   skills: jsonb("skills").$type<string[]>(),
   emailNotificationsOptIn: boolean("email_notifications_opt_in").notNull().default(true),
+  role: text("role").notNull().default("user"), // "user" | "admin"
+  lastActiveAt: timestamp("last_active_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

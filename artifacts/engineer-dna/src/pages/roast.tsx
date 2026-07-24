@@ -18,6 +18,7 @@ import {
   Info
 } from "lucide-react";
 import { getArchetypeMeta } from "@/lib/archetypes";
+import { FeedbackWidget } from "@/components/feedback-widget";
 
 interface RoastResponse {
   overallScore: number;
@@ -280,6 +281,11 @@ export default function RoastPage() {
                   Sign In to Save Progress <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
+            </div>
+
+            {/* Feedback Widget */}
+            <div className="pt-4 border-t border-border">
+              <FeedbackWidget context="roast_result" contextId={username} title="Was this roast evaluation accurate?" />
             </div>
           </div>
         </div>

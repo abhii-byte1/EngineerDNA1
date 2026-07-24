@@ -19,6 +19,8 @@ import RoastPage from '@/pages/roast';
 import LeaderboardPage from '@/pages/leaderboard';
 import ComparePage from '@/pages/compare';
 import InterviewSimulator from '@/pages/interview-simulator';
+import AdminPage from '@/pages/admin';
+import AboutPage from '@/pages/about';
 
 // Layout & Auth
 import { AppLayout } from '@/components/layout';
@@ -41,6 +43,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/login" component={Login} />
+      <Route path="/about" component={AboutPage} />
       <Route path="/u/:username" component={PublicProfile} />
       <Route path="/roast" component={RoastPage} />
       <Route path="/leaderboard" component={LeaderboardPage} />
@@ -52,6 +55,7 @@ function Router() {
       <Route path="/roadmap"><ProtectedRoute component={RoadmapPage} /></Route>
       <Route path="/goals"><ProtectedRoute component={GoalsPage} /></Route>
       <Route path="/interview-simulator"><ProtectedRoute component={InterviewSimulator} /></Route>
+      <Route path="/admin"><ProtectedRoute component={AdminPage} /></Route>
       <Route path="/settings"><ProtectedRoute component={SettingsPage} /></Route>
       
       <Route component={NotFound} />

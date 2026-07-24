@@ -3,6 +3,8 @@ import { motion } from "framer-motion"
 import { Link } from "wouter"
 import { useGetDashboardSummary } from "@workspace/api-client-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from '@/components/ui/skeleton';
+import { FeedbackWidget } from "@/components/feedback-widget";
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Activity, Target, Zap, AlertCircle, CheckCircle2, ArrowRight, Github, Globe, FileText, TrendingUp, TrendingDown, Minus } from "lucide-react"
@@ -161,6 +163,11 @@ export default function Dashboard() {
             </Card>
           )}
         </div>
+      </div>
+
+      {/* Feedback Widget */}
+      <div className="pt-4">
+        <FeedbackWidget context="dashboard" title="How's EngineerDNA working for you?" />
       </div>
     </div>
   )

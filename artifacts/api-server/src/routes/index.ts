@@ -14,6 +14,8 @@ import leaderboardRouter from "./leaderboard";
 import interviewSimulatorRouter from "./interview-simulator";
 import ogRouter from "./og";
 import compareRouter from "./compare";
+import adminRouter from "./admin";
+import feedbackRouter from "./feedback";
 
 const router: IRouter = Router();
 
@@ -25,6 +27,8 @@ router.use("/resume-dna", resumeDnaRouter);
 router.use("/roadmap", roadmapRouter);
 router.use("/goals", goalsRouter);
 router.use("/dashboard", dashboardRouter);
+router.use("/admin", adminRouter);
+router.use("/feedback", feedbackRouter);
 
 // Growth Engine Unauthenticated Public Routes
 router.use("/public", publicRouter);

@@ -10,7 +10,8 @@ import {
   Target, 
   BrainCircuit, 
   Settings,
-  LogOut
+  LogOut,
+  Info
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -22,6 +23,7 @@ const NAV_ITEMS = [
   { href: "/roadmap", label: "Roadmap", icon: Map },
   { href: "/goals", label: "Goals", icon: Target },
   { href: "/interview-simulator", label: "Interview Simulator", icon: BrainCircuit },
+  { href: "/about", label: "About", icon: Info },
 ]
 
 export function AppLayout({ children }: { children: React.ReactNode }) {

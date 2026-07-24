@@ -5,5 +5,5 @@ export * from "./resume-reports";
 export * from "./roadmaps";
 export * from "./goals";
 export * from "./interview-sessions";
-
-
+export * from "./admin-audit-log";
+export * from "./feedback";

@@ -20,6 +20,7 @@ import {
   Code
 } from "lucide-react";
 import { getArchetypeMeta } from "@/lib/archetypes";
+import { FeedbackWidget } from "@/components/feedback-widget";
 
 interface PublicProfileData {
   githubUsername: string;
@@ -228,6 +229,9 @@ export default function PublicProfile() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Feedback Widget */}
+        <FeedbackWidget context="scorecard" contextId={data.githubUsername} title="Was this scorecard feedback helpful?" />
 
         {/* Call to action footer */}
         <div className="text-center p-8 rounded-2xl border border-primary/20 bg-gradient-to-b from-primary/5 to-transparent space-y-4">

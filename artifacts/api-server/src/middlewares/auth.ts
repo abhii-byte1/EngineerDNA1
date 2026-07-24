@@ -42,6 +42,16 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
 
     (req as AuthenticatedRequest).user = user;
     (req as AuthenticatedRequest).sessionToken = token;
+
+    // Update lastActiveAt lightweight timestamp (throttled to max once per 5 min per user)
+    const now = new Date();
+    if (!user.lastActiveAt || now.getTime() - new Date(user.lastActiveAt).getTime() > 5 * 60 * 1000) {
+      db.update(usersTable)
+        .set({ lastActiveAt: now })
+        .where(eq(usersTable.id, user.id))
+        .catch((err) => console.error("[auth] failed to update lastActiveAt:", err));
+    }
+
     next();
   } catch (err) {
     // FIX: Log details server-side only — never expose internal errors to client

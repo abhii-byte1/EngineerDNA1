@@ -92,3 +92,21 @@ export const compareLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: "Too many compare requests." },
 });
+
+// Admin routes limiter: 200 requests per 15 minutes per IP
+export const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many admin requests." },
+});
+
+// Feedback limiter: 20 requests per hour per IP
+export const feedbackLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many feedback submissions. Please try again later." },
+});

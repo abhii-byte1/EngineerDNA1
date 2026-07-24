@@ -266,9 +266,14 @@ export default function Home() {
             </div>
             EngineerDNA
           </div>
-          <p className="text-sm font-mono text-muted-foreground">
-            System Online. Awaiting input.
-          </p>
+          <div className="flex items-center gap-6">
+            <Link href="/about" className="text-xs font-mono text-muted-foreground hover:text-foreground transition-colors">
+              About & Developer
+            </Link>
+            <p className="text-sm font-mono text-muted-foreground">
+              System Online. Awaiting input.
+            </p>
+          </div>
         </div>
       </footer>
     </div>
