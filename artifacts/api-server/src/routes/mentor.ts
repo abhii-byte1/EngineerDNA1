@@ -51,7 +51,7 @@ router.post("/sessions", requireAuth, async (req, res) => {
   await db.insert(mentorMessagesTable).values({ sessionId: session.id, role: "user", content: firstMessage });
 
   // Get AI response
-  let aiContent = "I'm here to help. Tell me more about what you're working on.";
+  let aiContent = "";
   try {
     const response = await gemini.models.generateContent({
       model: "gemini-2.5-flash",
@@ -60,11 +60,14 @@ router.post("/sessions", requireAuth, async (req, res) => {
         systemInstruction: `You are an expert AI engineering mentor with 20+ years of experience. You give precise, honest, and actionable guidance to software engineers. You ask clarifying questions when needed. Topic: ${topic}`,
       },
     });
-    aiContent = response.text ?? aiContent;
+    if (!response.text) {
+      throw new Error("Empty response from AI");
+    }
+    aiContent = response.text;
   } catch (err) {
-    // FIX: Log details server-side only
     console.error("[mentor] AI response error on session create:", err);
-    // Continue — we'll store the fallback message so the session isn't left incomplete
+    res.status(500).json({ error: "Failed to generate initial mentor response. Please try again." });
+    return;
   }
 
   await db.insert(mentorMessagesTable).values({ sessionId: session.id, role: "assistant", content: aiContent });
@@ -104,7 +107,7 @@ router.post("/sessions/:id/messages", requireAuth, async (req, res) => {
   const { user } = req as AuthenticatedRequest;
   const id = parseInt(req.params.id as string, 10);
 
-  // FIX: Validate message content with Zod
+  // Validate message content with Zod
   const parsed = sendMessageSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors });
@@ -119,23 +122,30 @@ router.post("/sessions/:id/messages", requireAuth, async (req, res) => {
     return;
   }
 
+  // Hard cap on total messages per session
+  if (session.messageCount >= 20) {
+    res.status(400).json({ error: "This mentor session has reached its maximum length. Please start a new session." });
+    return;
+  }
+
   // Store user message
   await db.insert(mentorMessagesTable).values({ sessionId: id, role: "user", content: content.trim() });
 
-  // Build conversation history for context (last 20 messages)
+  // Build conversation history for context
   const history = await db
     .select()
     .from(mentorMessagesTable)
     .where(eq(mentorMessagesTable.sessionId, id))
     .orderBy(mentorMessagesTable.createdAt);
 
-  const messages = history.slice(-20).map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
+  // Truncate to the last 10 messages to strictly cap token cost (the system instruction is also included)
+  const recentMessages = history.slice(-10).map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
 
-  let aiContent = "Let me think about that...";
+  let aiContent = "";
   try {
     const response = await gemini.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: messages.map(m => ({
+      contents: recentMessages.map(m => ({
         role: m.role === "assistant" ? "model" : "user",
         parts: [{ text: m.content }]
       })),
@@ -143,11 +153,15 @@ router.post("/sessions/:id/messages", requireAuth, async (req, res) => {
         systemInstruction: `You are an expert AI engineering mentor with 20+ years of experience. You give precise, honest, and actionable guidance. Session topic: ${session.topic}`,
       },
     });
-    aiContent = response.text ?? aiContent;
+    if (!response.text) {
+      throw new Error("Empty response from AI");
+    }
+    aiContent = response.text;
   } catch (err) {
-    // FIX: Log details server-side only
     console.error("[mentor] AI response error on send message:", err);
-    // Continue with fallback — don't leave user message without a response
+    // Remove the user message we just inserted so they can retry, or just throw an error.
+    res.status(500).json({ error: "Failed to generate mentor response. Please try again." });
+    return;
   }
 
   const [aiMessage] = await db
