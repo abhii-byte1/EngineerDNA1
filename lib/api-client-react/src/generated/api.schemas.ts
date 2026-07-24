@@ -479,14 +479,14 @@ export interface GoalUpdate {
   targetDate?: string;
 }
 
-export type DashboardSummaryGrowthTrend = typeof DashboardSummaryGrowthTrend[keyof typeof DashboardSummaryGrowthTrend];
+export type DashboardSummaryCurrentStandingBand = typeof DashboardSummaryCurrentStandingBand[keyof typeof DashboardSummaryCurrentStandingBand];
 
 
-export const DashboardSummaryGrowthTrend = {
-  accelerating: 'accelerating',
-  steady: 'steady',
-  stalling: 'stalling',
-  declining: 'declining',
+export const DashboardSummaryCurrentStandingBand = {
+  excellent: 'excellent',
+  good: 'good',
+  needs_work: 'needs_work',
+  critical: 'critical',
   new: 'new',
 } as const;
 
@@ -510,6 +510,6 @@ export interface DashboardSummary {
   topSkillGaps: string[];
   /** @nullable */
   nextAction?: string | null;
-  growthTrend: DashboardSummaryGrowthTrend;
+  currentStandingBand: DashboardSummaryCurrentStandingBand;
 }
 

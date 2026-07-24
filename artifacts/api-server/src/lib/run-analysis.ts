@@ -10,10 +10,11 @@ export async function runAnalysis<T extends { id: number }>(opts: {
   mapResult: (analysis: Record<string, unknown>, context?: any) => Record<string, unknown>;
 }): Promise<{ row: T; analysis: Record<string, unknown> }> {
   // 1. Insert initial row (e.g. pending/analyzing state)
-  const [report] = await db
+  const insertRes = await db
     .insert(opts.table)
     .values(opts.insertValues)
     .returning();
+  const report = Array.isArray(insertRes) ? insertRes[0] : (insertRes as any)[0];
 
   try {
     // 2. Build prompt

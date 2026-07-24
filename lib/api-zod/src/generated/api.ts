@@ -788,7 +788,7 @@ export const GetDashboardSummaryResponse = zod.object({
   "weeklyFocus": zod.string().nullish(),
   "topSkillGaps": zod.array(zod.string()),
   "nextAction": zod.string().nullish(),
-  "growthTrend": zod.enum(['accelerating', 'steady', 'stalling', 'declining', 'new'])
+  "currentStandingBand": zod.enum(['excellent', 'good', 'needs_work', 'critical', 'new'])
 })
 
 

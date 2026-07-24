@@ -5,7 +5,7 @@
  * EngineerDNA API - AI-powered Engineering Growth Platform
  * OpenAPI spec version: 0.1.0
  */
-import type { DashboardSummaryGrowthTrend } from './dashboardSummaryGrowthTrend';
+import type { DashboardSummaryCurrentStandingBand } from './dashboardSummaryCurrentStandingBand';
 import type { User } from './user';
 
 export interface DashboardSummary {
@@ -28,5 +28,5 @@ export interface DashboardSummary {
   topSkillGaps: string[];
   /** @nullable */
   nextAction?: string | null;
-  growthTrend: DashboardSummaryGrowthTrend;
+  currentStandingBand: DashboardSummaryCurrentStandingBand;
 }

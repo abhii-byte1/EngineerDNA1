@@ -54,7 +54,7 @@ const analyzeSchema = z.object({
 });
 
 // POST /api/portfolio-dna/analyze
-router.post("/analyze", requireAuth, aiLimiter, async (req, res) => {
+router.post("/analyze", requireAuth, ...aiLimiter, async (req, res) => {
   const { user } = req as AuthenticatedRequest;
 
   // FIX: Validate URL input with Zod

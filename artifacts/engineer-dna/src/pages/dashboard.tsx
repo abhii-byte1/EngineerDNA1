@@ -83,7 +83,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard title="Active Goals" value={activeGoals.toString()} sub={`${completedGoals} completed`} icon={<Target />} />
         <MetricCard title="Journal Streak" value={`${journalStreak} days`} sub="Consistency matters" icon={<Activity />} />
-        <MetricCard title="Current Standing" value={currentStandingBand?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) || "New"} icon={getBandIcon()} />
+        <MetricCard title="Current Standing" value={currentStandingBand?.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || "New"} icon={getBandIcon()} />
         <MetricCard title="Mentor Sessions" value={summary.mentorSessions.toString()} sub="AI-assisted guidance" icon={<Zap />} />
       </div>
 

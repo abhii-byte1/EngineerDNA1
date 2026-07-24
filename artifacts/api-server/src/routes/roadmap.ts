@@ -41,7 +41,7 @@ router.get("/", requireAuth, async (req, res) => {
 });
 
 // POST /api/roadmap — generate roadmap
-router.post("/", requireAuth, aiLimiter, async (req, res) => {
+router.post("/", requireAuth, ...aiLimiter, async (req, res) => {
   const { user } = req as AuthenticatedRequest;
 
   // FIX: Validate inputs with Zod
