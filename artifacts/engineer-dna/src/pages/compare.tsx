@@ -34,16 +34,15 @@ export default function ComparePage() {
   const fetchComparison = React.useCallback(async (u1: string, u2: string) => {
     setLoading(true);
     try {
-      const [res1, res2] = await Promise.all([
-        fetch(`/api/public/${encodeURIComponent(u1)}`),
-        fetch(`/api/public/${encodeURIComponent(u2)}`),
-      ]);
-
-      const json1 = res1.ok ? await res1.json() : null;
-      const json2 = res2.ok ? await res2.json() : null;
-
-      setData1(json1);
-      setData2(json2);
+      const res = await fetch(`/api/compare/${encodeURIComponent(u1)}/${encodeURIComponent(u2)}`);
+      if (!res.ok) {
+        setData1(null);
+        setData2(null);
+        return;
+      }
+      const json = await res.json();
+      setData1(json.user1);
+      setData2(json.user2);
     } catch (err) {
       toast({
         title: "Comparison Error",

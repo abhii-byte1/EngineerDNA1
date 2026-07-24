@@ -79,16 +79,16 @@ export default function Login() {
             </span>
           </h1>
           <p className="text-muted-foreground text-lg mb-10 leading-relaxed">
-            AI analysis of your GitHub, portfolio, and resume — so you know exactly where you're strong, where you're weak, and what to build next.
+            AI analysis of your GitHub and resume — so you know exactly where you're strong, where you're weak, and what to build next.
           </p>
 
           {/* Feature list */}
           <div className="space-y-3">
             {[
               { icon: <Github className="w-4 h-4 text-primary" />, text: "Deep GitHub repository analysis" },
-              { icon: <Code2 className="w-4 h-4 text-secondary" />, text: "Resume & portfolio scoring" },
+              { icon: <Star className="w-4 h-4 text-secondary" />, text: "Shareable public scorecard" },
               { icon: <Zap className="w-4 h-4 text-amber-400" />, text: "Personalized growth roadmap" },
-              { icon: <GitBranch className="w-4 h-4 text-emerald-400" />, text: "AI mentor for architecture decisions" },
+              { icon: <GitBranch className="w-4 h-4 text-emerald-400" />, text: "See your rank on the leaderboard" },
             ].map(({ icon, text }) => (
               <div key={text} className="flex items-center gap-3 text-sm text-muted-foreground">
                 <div className="w-7 h-7 rounded-md bg-background border border-border flex items-center justify-center flex-shrink-0">
@@ -229,21 +229,25 @@ export default function Login() {
           </div>
 
           {/* Dev login — dev only */}
-          <div className="relative py-2">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase font-mono">
-              <span className="bg-background px-2 text-muted-foreground/50">Development Only</span>
-            </div>
-          </div>
-          <a
-            href="/api/auth/dev-login"
-            className="flex items-center justify-center w-full gap-3 border border-border bg-card hover:bg-muted h-11 rounded-lg font-medium text-sm text-muted-foreground transition-colors"
-          >
-            <Terminal className="w-4 h-4" />
-            Bypass Auth (Dev Login)
-          </a>
+          {import.meta.env.DEV && (
+            <>
+              <div className="relative py-2">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase font-mono">
+                  <span className="bg-background px-2 text-muted-foreground/50">Development Only</span>
+                </div>
+              </div>
+              <a
+                href="/api/auth/dev-login"
+                className="flex items-center justify-center w-full gap-3 border border-border bg-card hover:bg-muted h-11 rounded-lg font-medium text-sm text-muted-foreground transition-colors"
+              >
+                <Terminal className="w-4 h-4" />
+                Bypass Auth (Dev Login)
+              </a>
+            </>
+          )}
 
           <p className="text-center text-xs text-muted-foreground/60 font-mono">
             By continuing, you agree our data is used only for your personal analysis.

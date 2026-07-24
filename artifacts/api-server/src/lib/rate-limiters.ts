@@ -74,3 +74,21 @@ export const publicLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: "Too many public profile requests." },
 });
+
+// OG image limiter: 60 requests per 15 minutes per IP
+export const ogLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many OG image requests." },
+});
+
+// Compare endpoint limiter: 60 requests per 15 minutes per IP
+export const compareLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many compare requests." },
+});

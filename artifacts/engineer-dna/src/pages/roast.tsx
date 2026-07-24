@@ -38,12 +38,50 @@ export default function RoastPage() {
   const [mode, setMode] = React.useState<"roast" | "coach">("roast");
   const [loading, setLoading] = React.useState(false);
   const [result, setResult] = React.useState<RoastResponse | null>(null);
+  const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || "";
+  const [turnstileToken, setTurnstileToken] = React.useState<string>(
+    import.meta.env.DEV && !turnstileSiteKey ? "dev-turnstile-token" : ""
+  );
+  const turnstileRef = React.useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  React.useEffect(() => {
+    if (!turnstileSiteKey || !turnstileRef.current) return;
+
+    // Load Cloudflare Turnstile script if not already present
+    const scriptId = "cf-turnstile-script";
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement("script");
+      script.id = scriptId;
+      script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+      script.onload = () => {
+        if ((window as any).turnstile && turnstileRef.current) {
+          (window as any).turnstile.render(turnstileRef.current, {
+            sitekey: turnstileSiteKey,
+            callback: (token: string) => setTurnstileToken(token),
+          });
+        }
+      };
+    } else if ((window as any).turnstile && turnstileRef.current) {
+      (window as any).turnstile.render(turnstileRef.current, {
+        sitekey: turnstileSiteKey,
+        callback: (token: string) => setTurnstileToken(token),
+      });
+    }
+  }, [turnstileSiteKey]);
 
   const handleRoast = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username.trim()) {
       toast({ title: "Please enter a GitHub username", variant: "destructive" });
+      return;
+    }
+
+    if (!turnstileToken) {
+      toast({ title: "Please complete the verification check", variant: "destructive" });
       return;
     }
 
@@ -57,6 +95,7 @@ export default function RoastPage() {
         body: JSON.stringify({
           githubUsername: username.trim(),
           mode,
+          turnstileToken,
         }),
       });
 
@@ -148,6 +187,11 @@ export default function RoastPage() {
                 {loading ? "Analyzing..." : mode === "roast" ? "Roast 🔥" : "Evaluate ⚡"}
               </Button>
             </div>
+            {turnstileSiteKey && (
+              <div className="flex justify-center pt-2">
+                <div ref={turnstileRef} />
+              </div>
+            )}
           </form>
         </CardContent>
       </Card>

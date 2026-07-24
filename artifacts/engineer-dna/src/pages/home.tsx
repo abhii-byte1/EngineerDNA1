@@ -55,7 +55,7 @@ export default function Home() {
               </span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-lg leading-relaxed">
-              Stop guessing why you're not growing. AI-powered analysis of your GitHub, portfolio, and resume to tell you exactly where you're weak, where you're strong, and what to build next.
+              Stop guessing why you're not growing. AI-powered analysis of your GitHub and resume to tell you exactly where you're weak, where you're strong, and what to build next.
             </p>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <Link href="/login">
@@ -123,33 +123,33 @@ export default function Home() {
             />
             <ModuleCard 
               icon={<Globe className="text-secondary" />}
-              title="Portfolio DNA"
-              description="Performance, accessibility, and UI/UX breakdown of your personal slice of the internet."
-              command="$ analyze --source=url"
+              title="Public Scorecard"
+              description="Shareable public profile showing developer archetypes, score percentiles, and README SVG badge."
+              command="$ share --profile=public"
             />
             <ModuleCard 
               icon={<FileText className="text-accent" />}
               title="Resume DNA"
               description="Technical accuracy and impact scoring. Turns passive claims into active achievements."
-              command="$ analyze --source=text"
+              command="$ analyze --source=resume"
             />
             <ModuleCard 
               icon={<MapIcon className="text-primary" />}
-              title="Engineering Roadmap"
-              description="AI-generated week-by-week goals based on your gaps and target role."
+              title="Next 3 Things Roadmap"
+              description="Targeted micro-roadmap recommending the next 3 high-impact skills to level up."
               command="$ generate --type=roadmap"
             />
             <ModuleCard 
               icon={<BookOpen className="text-secondary" />}
-              title="Growth Journal"
-              description="Track learnings and mistakes. Spot recurring anti-patterns in your thinking."
-              command="$ log --entry=today"
+              title="Leaderboard & Matchup"
+              description="Compare developer scorecards side-by-side and view track/level percentiles."
+              command="$ rank --global"
             />
             <ModuleCard 
               icon={<MessageSquare className="text-accent" />}
-              title="AI Mentor"
-              description="A senior engineer in your pocket to bounce architectural ideas off of."
-              command="$ chat --role=senior"
+              title="Interview Simulator"
+              description="Bounded technical interview practice tailored to your tech stack and experience level."
+              command="$ start --mode=interview"
             />
           </div>
         </div>
@@ -212,7 +212,7 @@ export default function Home() {
                 iconBgClasses: "bg-blue-500/10",
                 icon: <Database className="w-5 h-5 text-blue-400" />,
                 title: "Data stays yours",
-                desc: "Your analysis, journal entries, and resume are stored only to power your dashboard. Never sold, never shared with advertisers."
+                desc: "Your analysis, reports, and resume are stored only to power your dashboard. Never sold, never shared with advertisers."
               },
               {
                 colorClasses: "border-violet-500/20 bg-violet-500/5",

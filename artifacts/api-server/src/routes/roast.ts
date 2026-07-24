@@ -3,6 +3,7 @@ import { z } from "zod";
 import { roastLimiter } from "../lib/rate-limiters";
 import { analyzeGitHubProfile, type GitHubAnalysisResult } from "../lib/github-analysis";
 import { getScorePercentile, db } from "@workspace/db";
+import { verifyTurnstile } from "../lib/turnstile";
 
 const router = Router();
 
@@ -13,7 +14,7 @@ const roastSchema = z.object({
     .max(39, "GitHub username cannot exceed 39 characters")
     .regex(/^[a-zA-Z0-9-]+$/, "Invalid GitHub username format"),
   mode: z.enum(["roast", "coach"]).default("roast"),
-  turnstileToken: z.string().optional(),
+  turnstileToken: z.string().min(1, "Verification token is required"),
 });
 
 // Simple 24-hour in-memory cache per username & mode
@@ -43,7 +44,14 @@ router.post("/", roastLimiter, async (req, res) => {
     return;
   }
 
-  const { githubUsername, mode } = parsed.data;
+  const { githubUsername, mode, turnstileToken } = parsed.data;
+
+  const isHuman = await verifyTurnstile(turnstileToken);
+  if (!isHuman) {
+    res.status(400).json({ error: "Verification failed. Please try again." });
+    return;
+  }
+
   const cacheKey = `roast:${githubUsername.toLowerCase()}:${mode}`;
 
   // Check 24h cache first

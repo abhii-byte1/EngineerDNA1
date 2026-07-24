@@ -65,6 +65,27 @@ export default function PublicProfile() {
       });
   }, [username]);
 
+  React.useEffect(() => {
+    if (!data) return;
+    document.title = `@${data.githubUsername}'s EngineerDNA Scorecard`;
+
+    let ogImage = document.querySelector('meta[property="og:image"]');
+    if (!ogImage) {
+      ogImage = document.createElement("meta");
+      ogImage.setAttribute("property", "og:image");
+      document.head.appendChild(ogImage);
+    }
+    ogImage.setAttribute("content", `${window.location.origin}/api/og/${data.githubUsername}.png`);
+
+    let ogTitle = document.querySelector('meta[property="og:title"]');
+    if (!ogTitle) {
+      ogTitle = document.createElement("meta");
+      ogTitle.setAttribute("property", "og:title");
+      document.head.appendChild(ogTitle);
+    }
+    ogTitle.setAttribute("content", `@${data.githubUsername}'s EngineerDNA Scorecard`);
+  }, [data]);
+
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
     toast({
