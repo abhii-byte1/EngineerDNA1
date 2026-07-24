@@ -10,6 +10,7 @@ import dashboardRouter from "./dashboard";
 import publicRouter from "./public";
 import roastRouter from "./roast";
 import badgeRouter from "./badge";
+import leaderboardRouter from "./leaderboard";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use("/dashboard", dashboardRouter);
 router.use("/public", publicRouter);
 router.use("/roast", roastRouter);
 router.use("/badge", badgeRouter);
+router.use("/leaderboard", leaderboardRouter);
 
 export default router;

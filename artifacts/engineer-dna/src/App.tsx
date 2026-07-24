@@ -16,6 +16,8 @@ import GoalsPage from '@/pages/goals';
 import SettingsPage from '@/pages/settings';
 import PublicProfile from '@/pages/public-profile';
 import RoastPage from '@/pages/roast';
+import LeaderboardPage from '@/pages/leaderboard';
+import ComparePage from '@/pages/compare';
 
 // Layout & Auth
 import { AppLayout } from '@/components/layout';
@@ -40,6 +42,8 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/u/:username" component={PublicProfile} />
       <Route path="/roast" component={RoastPage} />
+      <Route path="/leaderboard" component={LeaderboardPage} />
+      <Route path="/compare/:user1/:user2" component={ComparePage} />
       
       <Route path="/dashboard"><ProtectedRoute component={Dashboard} /></Route>
       <Route path="/github-dna"><ProtectedRoute component={GithubDNA} /></Route>
