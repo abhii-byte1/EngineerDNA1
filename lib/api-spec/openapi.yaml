@@ -1372,9 +1372,9 @@ components:
             type: string
         nextAction:
           type: ["string", "null"]
-        growthTrend:
+        currentStandingBand:
           type: string
-          enum: [accelerating, steady, stalling, declining, new]
+          enum: [excellent, good, needs_work, critical, new]
       required:
         - user
         - githubAnalyzed
@@ -1387,4 +1387,4 @@ components:
         - mentorSessions
         - recentInsights
         - topSkillGaps
-        - growthTrend
+        - currentStandingBand

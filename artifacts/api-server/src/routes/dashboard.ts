@@ -83,15 +83,15 @@ router.get("/summary", requireAuth, async (req, res) => {
   // Top skill gaps from GitHub analysis
   const topSkillGaps: string[] = latestGithub?.growthAreas ? (latestGithub.growthAreas as string[]).slice(0, 4) : [];
 
-  // Growth trend based on scores over time
-  let growthTrend: "accelerating" | "steady" | "stalling" | "declining" | "new" = "new";
+  // Current standing band based on latest snapshot score
+  let currentStandingBand: "excellent" | "good" | "needs_work" | "critical" | "new" = "new";
   if (scores.length > 0) {
     const hasAllAnalyses = latestGithub && latestPortfolio && latestResume;
-    if (!hasAllAnalyses) growthTrend = "steady";
-    else if ((engineeringScore ?? 0) >= 80) growthTrend = "accelerating";
-    else if ((engineeringScore ?? 0) >= 60) growthTrend = "steady";
-    else if ((engineeringScore ?? 0) >= 40) growthTrend = "stalling";
-    else growthTrend = "declining";
+    if (!hasAllAnalyses) currentStandingBand = "good";
+    else if ((engineeringScore ?? 0) >= 80) currentStandingBand = "excellent";
+    else if ((engineeringScore ?? 0) >= 60) currentStandingBand = "good";
+    else if ((engineeringScore ?? 0) >= 40) currentStandingBand = "needs_work";
+    else currentStandingBand = "critical";
   }
 
   // Next action suggestion
@@ -121,7 +121,7 @@ router.get("/summary", requireAuth, async (req, res) => {
         weeklyFocus: currentRoadmap?.weeklyGoal ?? undefined,
         topSkillGaps,
         nextAction,
-        growthTrend,
+        currentStandingBand,
       }),
     ),
   );

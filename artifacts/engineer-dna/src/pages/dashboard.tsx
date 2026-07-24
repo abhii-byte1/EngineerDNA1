@@ -35,15 +35,15 @@ export default function Dashboard() {
     recentInsights,
     topSkillGaps,
     nextAction,
-    growthTrend
+    currentStandingBand
   } = summary
 
-  const getTrendIcon = () => {
-    switch (growthTrend) {
-      case "accelerating": return <TrendingUp className="text-primary w-5 h-5" />
-      case "steady": return <TrendingUp className="text-secondary w-5 h-5" />
-      case "stalling": return <Minus className="text-muted-foreground w-5 h-5" />
-      case "declining": return <TrendingDown className="text-destructive w-5 h-5" />
+  const getBandIcon = () => {
+    switch (currentStandingBand) {
+      case "excellent": return <TrendingUp className="text-primary w-5 h-5" />
+      case "good": return <TrendingUp className="text-secondary w-5 h-5" />
+      case "needs_work": return <Minus className="text-muted-foreground w-5 h-5" />
+      case "critical": return <TrendingDown className="text-destructive w-5 h-5" />
       case "new": return <Activity className="text-accent w-5 h-5" />
       default: return <Activity className="w-5 h-5" />
     }
@@ -55,7 +55,7 @@ export default function Dashboard() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">System Overview</h1>
           <p className="text-muted-foreground font-mono mt-1 text-sm">
-            Status: {growthTrend.toUpperCase()} | Identity: {summary.user.name}
+            Status: {currentStandingBand?.replace('_', ' ').toUpperCase()} | Identity: {summary.user.name}
           </p>
         </div>
         
@@ -83,7 +83,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard title="Active Goals" value={activeGoals.toString()} sub={`${completedGoals} completed`} icon={<Target />} />
         <MetricCard title="Journal Streak" value={`${journalStreak} days`} sub="Consistency matters" icon={<Activity />} />
-        <MetricCard title="Growth Trend" value={growthTrend.charAt(0).toUpperCase() + growthTrend.slice(1)} icon={getTrendIcon()} />
+        <MetricCard title="Current Standing" value={currentStandingBand?.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) || "New"} icon={getBandIcon()} />
         <MetricCard title="Mentor Sessions" value={summary.mentorSessions.toString()} sub="AI-assisted guidance" icon={<Zap />} />
       </div>
 
