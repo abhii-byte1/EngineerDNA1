@@ -207,4 +207,27 @@ router.get("/users", async (req, res) => {
   });
 });
 
+// POST /api/admin/users/:id/role — Update user role (promote / demote)
+router.post("/users/:id/role", async (req, res) => {
+  const targetId = Number(req.params.id);
+  const { role } = req.body as { role?: string };
+
+  if (!["user", "admin"].includes(role ?? "")) {
+    res.status(400).json({ error: "role must be 'user' or 'admin'" });
+    return;
+  }
+  if (!Number.isInteger(targetId)) {
+    res.status(400).json({ error: "Invalid user id" });
+    return;
+  }
+
+  const authReq = (req as unknown) as AuthenticatedRequest;
+  await db.update(usersTable).set({ role }).where(eq(usersTable.id, targetId));
+
+  // Audit log, per the existing admin-audit-log table
+  await logAdminAction(authReq.user.id, role === "admin" ? "promote_user" : "demote_user", targetId, { newRole: role });
+
+  res.json({ message: `User ${targetId} role updated to ${role}` });
+});
+
 export default router;

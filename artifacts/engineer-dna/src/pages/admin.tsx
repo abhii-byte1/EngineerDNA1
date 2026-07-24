@@ -164,6 +164,24 @@ export default function AdminPage() {
     { name: "Interviews", count: modules.interviewSimulator.totalSessions },
   ] : [];
 
+  const handleToggleRole = async (userId: number, currentRole: string) => {
+    const newRole = currentRole === "admin" ? "user" : "admin";
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/role`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: newRole }),
+      });
+      if (!res.ok) {
+        throw new Error("Failed to update role");
+      }
+      toast({ title: "Role Updated", description: `User #${userId} role changed to ${newRole}` });
+      fetchAdminData();
+    } catch {
+      toast({ title: "Error", description: "Failed to update user role", variant: "destructive" });
+    }
+  };
+
   return (
     <div className="space-y-8 max-w-6xl mx-auto p-4 md:p-8 animate-in fade-in duration-300">
       {/* Top Header */}
@@ -362,6 +380,7 @@ export default function AdminPage() {
                 <TableHead className="font-mono text-xs">Role</TableHead>
                 <TableHead className="font-mono text-xs">Joined</TableHead>
                 <TableHead className="font-mono text-xs">Last Active</TableHead>
+                <TableHead className="font-mono text-xs">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -382,6 +401,16 @@ export default function AdminPage() {
                   </TableCell>
                   <TableCell className="font-mono text-xs text-muted-foreground">
                     {u.lastActiveAt ? new Date(u.lastActiveAt).toLocaleDateString() : "Never"}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleToggleRole(u.id, u.role)}
+                      className="h-7 text-[10px] font-mono"
+                    >
+                      {u.role === "admin" ? "Demote to User" : "Promote to Admin"}
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
