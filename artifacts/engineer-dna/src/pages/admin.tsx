@@ -1,4 +1,6 @@
 import * as React from "react";
+import { useLocation } from "wouter";
+import { useGetMe } from "@workspace/api-client-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -74,9 +76,17 @@ interface AdminUser {
 }
 
 export default function AdminPage() {
+  const [, setLocation] = useLocation();
+  const { data: me, isLoading: authLoading } = useGetMe();
   const { toast } = useToast();
   const [loading, setLoading] = React.useState(true);
   const [unauthorized, setUnauthorized] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!authLoading && me && (me as any).role !== "admin") {
+      setLocation("/dashboard");
+    }
+  }, [me, authLoading, setLocation]);
 
   const [overview, setOverview] = React.useState<OverviewStats | null>(null);
   const [modules, setModules] = React.useState<ModuleStats | null>(null);

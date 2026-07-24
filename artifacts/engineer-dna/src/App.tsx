@@ -24,6 +24,7 @@ import AboutPage from '@/pages/about';
 
 // Layout & Auth
 import { AppLayout } from '@/components/layout';
+import { AdminLayout } from '@/components/admin-layout';
 import { AuthGuard } from '@/components/auth-guard';
 
 const queryClient = new QueryClient();
@@ -36,6 +37,16 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
       </AppLayout>
     </AuthGuard>
   )
+}
+
+function AdminRoute() {
+  return (
+    <AuthGuard>
+      <AdminLayout>
+        <AdminPage />
+      </AdminLayout>
+    </AuthGuard>
+  );
 }
 
 function Router() {
@@ -55,7 +66,7 @@ function Router() {
       <Route path="/roadmap"><ProtectedRoute component={RoadmapPage} /></Route>
       <Route path="/goals"><ProtectedRoute component={GoalsPage} /></Route>
       <Route path="/interview-simulator"><ProtectedRoute component={InterviewSimulator} /></Route>
-      <Route path="/admin"><ProtectedRoute component={AdminPage} /></Route>
+      <Route path="/admin"><AdminRoute /></Route>
       <Route path="/settings"><ProtectedRoute component={SettingsPage} /></Route>
       
       <Route component={NotFound} />
