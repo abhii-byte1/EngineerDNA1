@@ -47,3 +47,30 @@ export const authLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: "Too many auth requests, please slow down." },
 });
+
+// Roast limiter: 3 requests per hour per IP
+export const roastLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Roast rate limit exceeded. Max 5 roasts per hour per IP." },
+});
+
+// Badge SVG limiter: 60 requests per 15 minutes per IP
+export const badgeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many badge requests." },
+});
+
+// Public scorecard limiter: 100 requests per 15 minutes per IP
+export const publicLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many public profile requests." },
+});

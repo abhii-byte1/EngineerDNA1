@@ -14,6 +14,8 @@ import ResumeDNA from '@/pages/resume-dna';
 import RoadmapPage from '@/pages/roadmap';
 import GoalsPage from '@/pages/goals';
 import SettingsPage from '@/pages/settings';
+import PublicProfile from '@/pages/public-profile';
+import RoastPage from '@/pages/roast';
 
 // Layout & Auth
 import { AppLayout } from '@/components/layout';
@@ -36,6 +38,8 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/login" component={Login} />
+      <Route path="/u/:username" component={PublicProfile} />
+      <Route path="/roast" component={RoastPage} />
       
       <Route path="/dashboard"><ProtectedRoute component={Dashboard} /></Route>
       <Route path="/github-dna"><ProtectedRoute component={GithubDNA} /></Route>
