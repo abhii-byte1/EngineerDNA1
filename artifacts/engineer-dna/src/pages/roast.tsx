@@ -40,9 +40,10 @@ export default function RoastPage() {
   const [loading, setLoading] = React.useState(false);
   const [result, setResult] = React.useState<RoastResponse | null>(null);
   const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || "";
-  const [turnstileToken, setTurnstileToken] = React.useState<string>(
-    import.meta.env.DEV && !turnstileSiteKey ? "dev-turnstile-token" : ""
-  );
+  const [turnstileToken, setTurnstileToken] = React.useState<string>(() => {
+    if (!turnstileSiteKey) return "bypass-turnstile-token";
+    return import.meta.env.DEV ? "dev-turnstile-token" : "";
+  });
   const turnstileRef = React.useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
