@@ -95,14 +95,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           
-          <button
-            onClick={() => setFeedbackOpen(true)}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-amber-400 hover:bg-amber-400/10 transition-all mb-1"
-          >
-            <MessageSquare className="w-4 h-4" />
-            <span>Give Feedback</span>
-          </button>
-
           <Link 
             href="/settings"
             className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
