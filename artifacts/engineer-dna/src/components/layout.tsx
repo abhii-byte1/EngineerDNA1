@@ -11,9 +11,11 @@ import {
   BrainCircuit, 
   Settings,
   LogOut,
-  Info
+  Info,
+  MessageSquare
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { GlobalFeedbackModal } from "@/components/feedback-widget"
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -30,6 +32,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation()
   const { data: me } = useGetMe()
   const logout = useLogout()
+  const [feedbackOpen, setFeedbackOpen] = React.useState(false)
 
   const handleLogout = () => {
     logout.mutate(undefined, {
@@ -40,7 +43,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col md:flex-row">
+    <div className="min-h-screen bg-background flex flex-col md:flex-row relative">
+      <GlobalFeedbackModal open={feedbackOpen} onOpenChange={setFeedbackOpen} />
+
       {/* Sidebar */}
       <aside className="w-full md:w-64 border-r border-border bg-card/30 backdrop-blur-xl flex flex-col shrink-0 sticky top-0 md:h-screen z-10">
         <div className="p-6 border-b border-border flex items-center justify-between md:justify-start">
@@ -90,6 +95,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           
+          <button
+            onClick={() => setFeedbackOpen(true)}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-amber-400 hover:bg-amber-400/10 transition-all mb-1"
+          >
+            <MessageSquare className="w-4 h-4" />
+            <span>Give Feedback</span>
+          </button>
+
           <Link 
             href="/settings"
             className="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
@@ -109,10 +122,19 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 flex flex-col min-w-0 h-[calc(100vh-80px)] md:h-screen overflow-y-auto">
+      <main className="flex-1 flex flex-col min-w-0 h-[calc(100vh-80px)] md:h-screen overflow-y-auto relative">
         <div className="container max-w-6xl mx-auto p-4 md:p-8">
           {children}
         </div>
+
+        {/* Floating Feedback Trigger */}
+        <button
+          onClick={() => setFeedbackOpen(true)}
+          className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-4 py-2.5 rounded-full bg-primary text-primary-foreground font-mono text-xs font-bold shadow-2xl hover:scale-105 transition-all"
+        >
+          <MessageSquare className="w-4 h-4" />
+          Feedback
+        </button>
       </main>
     </div>
   )
