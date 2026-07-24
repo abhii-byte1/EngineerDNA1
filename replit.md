@@ -24,15 +24,15 @@ An AI-powered Engineering Growth Platform that answers real developer growth que
 - Dev login at `GET /api/auth/dev-login` for local development
 
 ### AI
-- Uses OpenAI directly via OPENAI_API_KEY (user-provided secret)
-- Model: gpt-4o-mini with JSON output mode for all analysis
+- Uses Google Gemini via GEMINI_API_KEY (user-provided secret)
+- Model: gemini-2.5-flash with JSON output mode for all analysis
 
 ### Database
-- Replit PostgreSQL (DATABASE_URL auto-provisioned)
+- PostgreSQL on NeonDB
 - After schema changes: `pnpm --filter @workspace/db run push`
 
 ## Modules
-1. **GitHub DNA** — Analyzes real GitHub repos via public API + GPT
+1. **GitHub DNA** — Analyzes real GitHub repos via public API + Gemini
 2. **Portfolio DNA** — Analyzes portfolio website URL
 3. **Resume DNA** — Analyzes pasted resume text
 4. **Roadmap** — AI-generated week-by-week engineering growth plan
@@ -40,7 +40,7 @@ An AI-powered Engineering Growth Platform that answers real developer growth que
 6. **AI Mentor** — Conversational engineering coach
 
 ## Required Secrets
-- `OPENAI_API_KEY` — for all AI features
+- `GEMINI_API_KEY` — for all AI features
 - `GITHUB_CLIENT_ID` — for GitHub OAuth login
 - `GITHUB_CLIENT_SECRET` — for GitHub OAuth login
 - `SESSION_SECRET` — already provisioned
