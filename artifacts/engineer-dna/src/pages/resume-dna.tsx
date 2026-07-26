@@ -246,12 +246,17 @@ export default function ResumeDNA() {
   )
 }
 
+import { AnimatedCounter } from "@/lib/animations"
+
 function ScoreCard({ title, score }: { title: string, score: number }) {
   return (
     <Card className="bg-card/50">
       <CardContent className="p-4 text-center">
         <div className="text-xs text-muted-foreground uppercase tracking-wider font-bold mb-2">{title}</div>
-        <div className="text-3xl font-bold text-foreground">{score}<span className="text-sm text-muted-foreground">/100</span></div>
+        <div className="text-3xl font-bold text-foreground">
+          <AnimatedCounter value={score} />
+          <span className="text-sm text-muted-foreground">/100</span>
+        </div>
       </CardContent>
     </Card>
   )

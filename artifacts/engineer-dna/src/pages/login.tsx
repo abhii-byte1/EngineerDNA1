@@ -5,6 +5,10 @@ import {
   Github, Code2, Terminal, Shield, Eye, Lock,
   CheckCircle2, XCircle, Star, GitBranch, Zap, ChevronDown
 } from "lucide-react"
+import { SpotlightCard } from "@/components/ui/spotlight"
+import { BorderBeam } from "@/components/ui/border-beam"
+
+const DnaHelix3D = React.lazy(() => import("@/components/dna-helix-3d"))
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -86,6 +90,13 @@ export default function Login() {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-secondary/10" />
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
 
+        {/* 3D Canvas Background Helix */}
+        <div className="absolute inset-0 opacity-40 pointer-events-none">
+          <React.Suspense fallback={null}>
+            <DnaHelix3D />
+          </React.Suspense>
+        </div>
+
         <div className="relative z-10 max-w-lg">
           {/* Logo */}
           <div className="flex items-center gap-3 font-mono font-bold text-2xl tracking-tighter mb-10">
@@ -114,7 +125,7 @@ export default function Login() {
               { icon: <GitBranch className="w-4 h-4 text-emerald-400" />, text: "See your rank on the leaderboard" },
             ].map(({ icon, text }) => (
               <div key={text} className="flex items-center gap-3 text-sm text-muted-foreground">
-                <div className="w-7 h-7 rounded-md bg-background border border-border flex items-center justify-center flex-shrink-0">
+                <div className="w-7 h-7 rounded-md bg-background/80 border border-border backdrop-blur-md flex items-center justify-center flex-shrink-0">
                   {icon}
                 </div>
                 {text}
@@ -168,15 +179,18 @@ export default function Login() {
 
           {/* Sign in buttons */}
           <div className="space-y-3">
-            <a
-              href="/api/auth/github"
-              target="_top"
-              id="github-login-btn"
-              className="flex items-center justify-center w-full gap-3 bg-foreground text-background hover:bg-foreground/90 h-13 py-3.5 rounded-xl font-semibold text-base transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-foreground/10"
-            >
-              <Github className="w-5 h-5" />
-              Continue with GitHub
-            </a>
+            <div className="relative group rounded-xl overflow-hidden">
+              <BorderBeam size={140} duration={6} colorFrom="#10b981" colorTo="#06b6d4" />
+              <a
+                href="/api/auth/github"
+                target="_top"
+                id="github-login-btn"
+                className="flex items-center justify-center w-full gap-3 bg-foreground text-background hover:bg-foreground/90 h-13 py-3.5 rounded-xl font-semibold text-base transition-all hover:scale-[1.01] active:scale-[0.99] shadow-lg shadow-foreground/10 relative z-10"
+              >
+                <Github className="w-5 h-5" />
+                Continue with GitHub
+              </a>
+            </div>
 
             <a
               href="/api/auth/google"

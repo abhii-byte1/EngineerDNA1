@@ -209,3 +209,14 @@
     @apply bg-card/60 backdrop-blur-xl border border-border;
   }
 }
+
+@keyframes border-beam {
+  100% {
+    offset-distance: 100%;
+  }
+}
+
+@keyframes grid-fade {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+}

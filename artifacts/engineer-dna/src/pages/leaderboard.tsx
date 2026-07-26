@@ -8,6 +8,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Trophy, Sparkles, Shield, ArrowRight, UserPlus, Filter } from "lucide-react";
 import { getArchetypeMeta } from "@/lib/archetypes";
 
+import { motion } from "framer-motion";
+import { staggerContainer, staggerItem } from "@/lib/animations";
+
 interface LeaderboardItem {
   id: number;
   githubUsername: string;
@@ -134,16 +137,16 @@ export default function LeaderboardPage() {
           </Link>
         </Card>
       ) : (
-        <div className="space-y-3">
+        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-3">
           {items.map((item, idx) => {
             const meta = getArchetypeMeta(item.archetype);
             const rank = idx + 1;
 
             return (
-              <Card
-                key={item.id}
-                className="border-border/80 bg-card/60 hover:border-primary/40 transition-all overflow-hidden"
-              >
+              <motion.div key={item.id} variants={staggerItem}>
+                <Card
+                  className="border-border/80 bg-card/60 hover:border-primary/40 transition-all overflow-hidden"
+                >
                 <CardContent className="p-4 md:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                   <div className="flex items-center gap-4 min-w-0">
                     {/* Rank Badge */}
@@ -199,9 +202,10 @@ export default function LeaderboardPage() {
                   </div>
                 </CardContent>
               </Card>
-            );
-          })}
-        </div>
+            </motion.div>
+          );
+        })}
+      </motion.div>
       )}
     </div>
   );

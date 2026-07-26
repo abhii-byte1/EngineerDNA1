@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Slider } from "@/components/ui/slider"
 import { Target, Trash2, CheckCircle2, PlayCircle, PauseCircle, XCircle } from "lucide-react"
+import { motion } from "framer-motion"
+import { staggerContainer, staggerItem } from "@/lib/animations"
 
 const goalSchema = z.object({
   title: z.string().min(3, "Title required"),
@@ -146,17 +148,18 @@ export default function GoalsPage() {
             {activeGoals.length === 0 ? (
               <p className="text-muted-foreground text-sm">No active goals. Define parameters to begin.</p>
             ) : (
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                 {activeGoals.map(goal => (
-                  <GoalCard 
-                    key={goal.id} 
-                    goal={goal} 
-                    onProgress={(p) => handleUpdateProgress(goal.id, p)} 
-                    onStatus={(s) => handleUpdateStatus(goal.id, s)}
-                    onDelete={() => handleDelete(goal.id)}
-                  />
+                  <motion.div key={goal.id} variants={staggerItem}>
+                    <GoalCard 
+                      goal={goal} 
+                      onProgress={(p) => handleUpdateProgress(goal.id, p)} 
+                      onStatus={(s) => handleUpdateStatus(goal.id, s)}
+                      onDelete={() => handleDelete(goal.id)}
+                    />
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
             )}
           </div>
 

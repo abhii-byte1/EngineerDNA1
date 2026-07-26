@@ -228,3 +228,46 @@ All screenshots have been created and stored in [artifacts/qa-screenshots/](file
   - *Downloading before report exists*: Button is conditionally rendered only when a completed analysis report exists.
   - *Downloading mid-loading / error state*: Action buttons are disabled or hidden during pending/failed report states.
 
+---
+
+## 9. Session 5: Site-Wide Animation & 3D Enhancement — 2026-07-27
+
+### 9.1 Pages & Components Enhanced
+
+| Target Page / Component | Features Added | Implementation Details |
+|---|---|---|
+| **Landing Page (`home.tsx`)** | 3D DNA Helix centerpiece, Spotlight Cards, BorderBeam CTAs, Animated Grid Background | Integrated lazy-loaded `<DnaHelix3D />` canvas, cursor spotlight effects on module cards, and animated gradient CTA border beam. |
+| **Login Page (`login.tsx`)** | 3D Helix background, BorderBeam on primary OAuth CTA | Added subtle ambient 3D DNA canvas behind brand panel and glowing border beam around GitHub login button. |
+| **Roast Page (`roast.tsx`)** | Animated Grid Background, Score Count-Up | Wrapped public roast page in glowing grid pattern; converted static score display to animated cubic ease-out counter (`AnimatedCounter`). |
+| **GitHub DNA Page (`github-dna.tsx`)** | Score Count-Up | Integrated `AnimatedCounter` for overall score reveal on completed report cards. |
+| **Resume DNA Page (`resume-dna.tsx`)** | Score Count-Up | Integrated `AnimatedCounter` across Writing Quality, Tech Accuracy, and Impact scorecards. |
+| **Leaderboard Page (`leaderboard.tsx`)** | Staggered Row Reveal | Applied `staggerContainer` and `staggerItem` variants to animate global ranking cards sequentially. |
+| **Goals Page (`goals.tsx`)** | Staggered Card Grid Reveal | Applied `staggerContainer` and `staggerItem` variants for smooth sequential operation card entrance. |
+| **Public Profile (`public-profile.tsx`)** | Download Report PDF + Shareable Scorecard | Integrated `downloadReportAsPdf` helper and action buttons. |
+
+---
+
+### 9.2 Shared Motion Architecture (`src/lib/animations.tsx`)
+- **Reusable Framer Motion Variants**: `fadeInUp`, `fadeInDown`, `fadeIn`, `scaleUp`, `staggerContainer`, `staggerItem`.
+- **`useReducedMotionPreference` Hook**: Detects `(prefers-reduced-motion: reduce)` media queries and disables rotation loops and delay offsets.
+- **`usePageVisibility` Hook**: Listens to `document.visibilityState` changes and pauses Three.js requestAnimationFrame loops when tab is hidden.
+- **`AnimatedCounter` Component**: Smooth 1.2s cubic ease-out count-up animation for all numeric scores.
+
+---
+
+### 9.3 Performance Safeguards & Bundle Delta
+
+#### 1. Bundle Size Impact (Pre vs Post Session 5)
+- **Pre-Session 5 Main Bundle**: `440.03 kB` (`140.86 kB` gzip)
+- **Post-Session 5 Main Bundle**: `444.42 kB` (`142.14 kB` gzip)
+- **Main Bundle Increase**: **+4.39 kB** (0.99% delta — well within the <150–200 kB budget safeguard).
+- **3D Canvas Engine Chunk (`dna-helix-3d-*.js`)**: `895.17 kB` (`241.64 kB` gzip) — **100% lazy-loaded on demand** via `React.lazy()` + `<Suspense>`, never blocking initial page load or core functional routes.
+
+#### 2. Accessibility & Reduced Motion Confirmation
+- **`prefers-reduced-motion: reduce`**: Verified that animations, 3D rotations, and count-up loops freeze/render instantly as static fallbacks.
+- **Tab Visibility (Page Visibility API)**: Verified that 3D canvas rendering loops pause when tab loses focus.
+
+#### 3. Deliberate Animation Tradeoffs
+- Data-dense functional pages (**Dashboard**, **Settings**, **Admin**) were deliberately kept clean without heavy particle effects or complex 3D viewports to preserve data scannability and maximum responsiveness.
+
+

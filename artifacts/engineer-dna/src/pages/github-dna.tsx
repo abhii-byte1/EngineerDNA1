@@ -37,6 +37,8 @@ const formSchema = z.object({
   username: z.string().min(1, "GitHub username is required"),
 });
 
+import { AnimatedCounter } from "@/lib/animations"
+
 export default function GithubDNA() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -272,7 +274,7 @@ export default function GithubDNA() {
               <CardContent className="p-6 flex flex-col items-center justify-center h-full text-center">
                 <div className="text-sm font-medium text-muted-foreground mb-2">Overall Score</div>
                 <div className="text-5xl font-bold tracking-tighter text-primary mb-2">
-                  {reportToDisplay.overallScore || 0}
+                  <AnimatedCounter value={reportToDisplay.overallScore || 0} />
                 </div>
                 <Badge variant="outline" className="font-mono bg-background">
                   {reportToDisplay.percentile !== null && reportToDisplay.percentile !== undefined

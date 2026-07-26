@@ -3,8 +3,14 @@ import { Link } from "wouter"
 import { motion } from "framer-motion"
 import { ArrowRight, BookOpen, Code2, Database, FileText, GitBranch, Github, Globe, Layers, Map as MapIcon, MessageSquare, Terminal, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { SpotlightCard } from "@/components/ui/spotlight"
+import { BorderBeam } from "@/components/ui/border-beam"
+import { AnimatedGridBg } from "@/components/ui/animated-grid-bg"
+import { fadeInUp, staggerContainer, staggerItem } from "@/lib/animations"
 
 import heroDnaImage from "@assets/generated_images/hero-dna.jpg"
+
+const DnaHelix3D = React.lazy(() => import("@/components/dna-helix-3d"))
 
 export default function Home() {
   return (
@@ -34,6 +40,7 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
+        <AnimatedGridBg />
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-background" />
           <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-primary/20 rounded-full blur-[120px] opacity-50 pointer-events-none" />
@@ -62,9 +69,12 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <Link href="/roast">
-                <Button size="lg" className="font-mono text-sm uppercase tracking-wider w-full sm:w-auto">
-                  Roast My GitHub 🔥 <ArrowRight className="ml-2 w-4 h-4" />
-                </Button>
+                <div className="relative group rounded-lg overflow-hidden">
+                  <BorderBeam size={120} duration={6} colorFrom="#10b981" colorTo="#06b6d4" />
+                  <Button size="lg" className="font-mono text-sm uppercase tracking-wider w-full sm:w-auto relative z-10">
+                    Roast My GitHub 🔥 <ArrowRight className="ml-2 w-4 h-4" />
+                  </Button>
+                </div>
               </Link>
               <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 or sign in for full tracking →
@@ -78,19 +88,15 @@ export default function Home() {
             transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
             className="flex-1 w-full max-w-lg lg:max-w-none relative"
           >
-            <div className="aspect-square relative rounded-2xl overflow-hidden border border-border shadow-2xl shadow-primary/10">
-              <img 
-                src={heroDnaImage} 
-                alt="Engineering DNA abstract visualization" 
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-tr from-background/80 via-transparent to-transparent" />
+            <div className="aspect-square relative rounded-2xl overflow-hidden border border-border shadow-2xl shadow-primary/10 bg-card/40 backdrop-blur-xl flex items-center justify-center">
+              <React.Suspense fallback={<div className="w-full h-full flex items-center justify-center text-xs font-mono text-muted-foreground animate-pulse">Initializing 3D DNA Canvas...</div>}>
+                <DnaHelix3D />
+              </React.Suspense>
+
+              <div className="absolute inset-0 bg-gradient-to-tr from-background/80 via-transparent to-transparent pointer-events-none" />
               
-              {/* Overlay UI elements to make it look like a dashboard */}
-              <div className="absolute bottom-6 left-6 right-6 p-4 rounded-xl glass-panel text-sm font-mono text-muted-foreground">
+              {/* Overlay UI elements */}
+              <div className="absolute bottom-6 left-6 right-6 p-4 rounded-xl glass-panel text-sm font-mono text-muted-foreground backdrop-blur-2xl">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-foreground font-bold">DNA_MATCH</span>
                   <span className="text-primary">98.4%</span>
@@ -291,18 +297,21 @@ export default function Home() {
 
 function ModuleCard({ icon, title, description, command }: { icon: React.ReactNode, title: string, description: string, command: string }) {
   return (
-    <motion.div 
-      whileHover={{ y: -5 }}
-      className="p-6 rounded-xl border border-border bg-card flex flex-col h-full hover:border-primary/50 transition-colors group"
-    >
-      <div className="w-12 h-12 rounded-lg bg-background border border-border flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-        {icon}
-      </div>
-      <h3 className="text-xl font-bold tracking-tight mb-3">{title}</h3>
-      <p className="text-muted-foreground mb-8 flex-1">{description}</p>
-      <div className="mt-auto px-3 py-2 bg-muted rounded border border-border/50 font-mono text-xs text-muted-foreground">
-        {command}
-      </div>
-    </motion.div>
+    <SpotlightCard className="rounded-xl border border-border bg-card/60 backdrop-blur-xl h-full hover:border-primary/40 transition-colors">
+      <motion.div 
+        whileHover={{ y: -4 }}
+        transition={{ duration: 0.2 }}
+        className="p-6 flex flex-col h-full group"
+      >
+        <div className="w-12 h-12 rounded-lg bg-background border border-border flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+          {icon}
+        </div>
+        <h3 className="text-xl font-bold tracking-tight mb-3">{title}</h3>
+        <p className="text-muted-foreground mb-8 flex-1 text-sm leading-relaxed">{description}</p>
+        <div className="mt-auto px-3 py-2 bg-muted/60 rounded border border-border/50 font-mono text-xs text-muted-foreground">
+          {command}
+        </div>
+      </motion.div>
+    </SpotlightCard>
   )
 }

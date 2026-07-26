@@ -23,6 +23,10 @@ import { downloadReportAsPdf } from "@/lib/downloadReportAsPdf";
 import { useGetMe } from "@workspace/api-client-react";
 import { getArchetypeMeta } from "@/lib/archetypes";
 import { FeedbackWidget } from "@/components/feedback-widget";
+import { AnimatedGridBg } from "@/components/ui/animated-grid-bg";
+import { SpotlightCard } from "@/components/ui/spotlight";
+import { BorderBeam } from "@/components/ui/border-beam";
+import { AnimatedCounter } from "@/lib/animations";
 
 interface RoastResponse {
   overallScore: number;
@@ -154,7 +158,8 @@ export default function RoastPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground py-12 px-4 md:px-8 max-w-4xl mx-auto space-y-10">
+    <div className="min-h-screen bg-background text-foreground py-12 px-4 md:px-8 max-w-4xl mx-auto space-y-10 relative overflow-hidden">
+      <AnimatedGridBg />
       {/* Header */}
       <div className="text-center space-y-4">
         <Badge variant="outline" className="px-4 py-1 border-primary/30 text-primary font-mono text-xs">
@@ -262,7 +267,9 @@ export default function RoastPage() {
                 <div className="flex items-center gap-4 bg-background/80 border border-border rounded-xl p-4">
                   <div className="text-right">
                     <div className="text-xs font-semibold text-muted-foreground">SCORE</div>
-                    <div className="text-3xl font-bold font-mono text-primary">{result.overallScore}</div>
+                    <div className="text-3xl font-bold font-mono text-primary">
+                      <AnimatedCounter value={result.overallScore} />
+                    </div>
                   </div>
                   {result.percentile !== null && (
                     <div className="text-right border-l border-border pl-4">
