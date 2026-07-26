@@ -82,6 +82,27 @@ export default function Dashboard() {
         )}
       </div>
 
+      {!summary.user.githubUsername && (
+        <Card className="bg-amber-500/10 border-amber-500/30">
+          <CardContent className="p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Github className="w-6 h-6 text-amber-500 shrink-0" />
+              <div>
+                <p className="font-bold text-sm">Connect your GitHub Username</p>
+                <p className="text-xs text-muted-foreground">
+                  You're signed in via Google. Add your GitHub username in Settings to run GitHub DNA scans & build your public scorecard.
+                </p>
+              </div>
+            </div>
+            <Link href="/settings">
+              <Button size="sm" variant="outline" className="shrink-0 font-mono text-xs">
+                Connect GitHub Username →
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <MetricCard title="Active Goals" value={activeGoals.toString()} sub={`${completedGoals} completed`} icon={<Target />} />
         <MetricCard title="Current Standing" value={currentStandingBand?.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || "New"} icon={getBandIcon()} />

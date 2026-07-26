@@ -18,6 +18,7 @@ const router = Router();
 // ── Zod Schemas ───────────────────────────────────────────────────────────────
 const patchProfileSchema = z.object({
   name: z.string().min(1).max(100).optional(),
+  githubUsername: z.string().min(1).max(39).regex(/^[a-zA-Z0-9-]+$/).optional(),
   bio: z.string().max(1000).optional(),
   targetRole: z.string().max(100).optional(),
   experienceLevel: z.enum(["junior", "mid", "senior", "staff", "principal"]).optional(),
@@ -43,12 +44,13 @@ router.patch("/profile", requireAuth, async (req, res) => {
     return;
   }
 
-  const { name, bio, targetRole, experienceLevel, primaryTrack, yearsOfExperience, skills } = parsed.data;
+  const { name, githubUsername, bio, targetRole, experienceLevel, primaryTrack, yearsOfExperience, skills } = parsed.data;
 
   const [updated] = await db
     .update(usersTable)
     .set({
       ...(name !== undefined && { name }),
+      ...(githubUsername !== undefined && { githubUsername }),
       ...(bio !== undefined && { bio }),
       ...(targetRole !== undefined && { targetRole }),
       ...(experienceLevel !== undefined && { experienceLevel }),

@@ -14,6 +14,7 @@ import { X, Settings2 } from "lucide-react"
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name required"),
+  githubUsername: z.string().optional(),
   bio: z.string().optional(),
   targetRole: z.string().optional(),
   experienceLevel: z.string().optional(),
@@ -32,7 +33,7 @@ export default function SettingsPage() {
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: "", bio: "", targetRole: "", experienceLevel: "", primaryTrack: "", yearsOfExperience: 0
+      name: "", githubUsername: "", bio: "", targetRole: "", experienceLevel: "", primaryTrack: "", yearsOfExperience: 0
     }
   })
 
@@ -40,6 +41,7 @@ export default function SettingsPage() {
     if (profile) {
       form.reset({
         name: profile.name || "",
+        githubUsername: profile.githubUsername || "",
         bio: profile.bio || "",
         targetRole: profile.targetRole || "",
         experienceLevel: profile.experienceLevel || "",
@@ -96,10 +98,14 @@ export default function SettingsPage() {
         <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Display Name</label>
                 <Input {...form.register("name")} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">GitHub Username</label>
+                <Input placeholder="e.g. octocat" {...form.register("githubUsername")} />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Years of Experience</label>
