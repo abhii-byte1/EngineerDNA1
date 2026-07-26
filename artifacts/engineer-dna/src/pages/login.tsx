@@ -125,8 +125,11 @@ export default function Login() {
           {/* Header */}
           <div className="text-center space-y-2">
             <h2 className="text-2xl font-bold tracking-tight">Sign in to get started</h2>
-            <p className="text-muted-foreground text-sm">
-              We use GitHub to verify you're a real engineer — nothing more.
+            <p className="text-sm text-muted-foreground mt-1">
+              New or returning — one click with GitHub either way.
+            </p>
+            <p className="text-muted-foreground text-xs">
+              We use GitHub or Google to verify you're a real engineer — nothing more.
             </p>
           </div>
 

@@ -19,14 +19,14 @@ export default function Home() {
             EngineerDNA
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Sign In
+            </Link>
+            <Link href="/login" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+              New here? Get your free analysis →
             </Link>
             <Link href="/roast">
               <Button size="sm" className="font-mono text-xs uppercase tracking-wider">Roast My GitHub 🔥</Button>
-            </Link>
-            <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              or sign in for full tracking →
             </Link>
           </div>
         </div>
