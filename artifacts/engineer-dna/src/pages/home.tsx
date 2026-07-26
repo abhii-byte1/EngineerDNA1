@@ -22,8 +22,11 @@ export default function Home() {
             <Link href="/login" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Sign In
             </Link>
-            <Link href="/login">
-              <Button size="sm" className="font-mono text-xs uppercase tracking-wider">Start Analysis</Button>
+            <Link href="/roast">
+              <Button size="sm" className="font-mono text-xs uppercase tracking-wider">Roast My GitHub 🔥</Button>
+            </Link>
+            <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              or sign in for full tracking →
             </Link>
           </div>
         </div>
@@ -58,14 +61,14 @@ export default function Home() {
               Stop guessing why you're not growing. AI-powered analysis of your GitHub and resume to tell you exactly where you're weak, where you're strong, and what to build next.
             </p>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <Link href="/login">
+              <Link href="/roast">
                 <Button size="lg" className="font-mono text-sm uppercase tracking-wider w-full sm:w-auto">
-                  Initialize Scan <ArrowRight className="ml-2 w-4 h-4" />
+                  Roast My GitHub 🔥 <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </Link>
-              <p className="text-xs text-muted-foreground font-mono">
-                $ analyze --target=you
-              </p>
+              <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                or sign in for full tracking →
+              </Link>
             </div>
           </motion.div>
 
@@ -170,11 +173,16 @@ export default function Home() {
             <p className="text-xl text-muted-foreground mb-12 leading-relaxed">
               Because nobody is reviewing your code outside of work. Because your side projects are abandoned. Because you don't know what you don't know. EngineerDNA gives you the brutal, objective feedback you need to break through the plateau.
             </p>
-            <Link href="/login">
-              <Button size="lg" className="font-mono uppercase tracking-wider h-14 px-8 text-base">
-                Stop Guessing. Start Growing.
-              </Button>
-            </Link>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link href="/roast">
+                <Button size="lg" className="font-mono uppercase tracking-wider h-14 px-8 text-base">
+                  Roast My GitHub 🔥
+                </Button>
+              </Link>
+              <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                or sign in for full tracking →
+              </Link>
+            </div>
           </motion.div>
         </div>
       </section>
