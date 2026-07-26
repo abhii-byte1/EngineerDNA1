@@ -1,9 +1,9 @@
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 
-// General limiter: 100 requests per 15 minutes per IP
+// General limiter: 200 requests per 15 minutes per IP (allows normal SPA navigation & background refetches)
 export const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: 200,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Too many requests, please try again later." },

@@ -238,10 +238,11 @@ export type RoadmapInputCurrentLevel = typeof RoadmapInputCurrentLevel[keyof typ
 
 
 export const RoadmapInputCurrentLevel = {
-  beginner: 'beginner',
   junior: 'junior',
   mid: 'mid',
   senior: 'senior',
+  staff: 'staff',
+  principal: 'principal',
 } as const;
 
 export interface RoadmapInput {

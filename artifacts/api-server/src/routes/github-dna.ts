@@ -159,6 +159,9 @@ router.patch("/reports/:id/visibility", requireAuth, async (req, res) => {
   if (parsed.data.isPublic !== undefined) {
     updates.isPublic = parsed.data.isPublic;
     updates.isPublicUpdatedAt = new Date();
+    if (parsed.data.leaderboardOptIn === undefined) {
+      updates.leaderboardOptIn = parsed.data.isPublic;
+    }
   }
   if (parsed.data.leaderboardOptIn !== undefined) {
     updates.leaderboardOptIn = parsed.data.leaderboardOptIn;

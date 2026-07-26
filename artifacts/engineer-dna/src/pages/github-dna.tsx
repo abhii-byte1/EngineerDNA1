@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { downloadReportAsPdf } from "@/lib/downloadReportAsPdf";
 import { 
   Github, 
   GitBranch, 
@@ -23,11 +24,12 @@ import {
   CheckCircle2, 
   ArrowRight, 
   RefreshCw, 
-  Share2, 
-  Sparkles, 
-  Globe, 
   Lock, 
-  Code 
+  Globe, 
+  Code, 
+  Sparkles,
+  Download,
+  Loader2
 } from "lucide-react";
 import { getArchetypeMeta } from "@/lib/archetypes";
 
@@ -57,6 +59,8 @@ export default function GithubDNA() {
   const [lastUsername, setLastUsername] = React.useState("");
   const [showOptInModal, setShowOptInModal] = React.useState(false);
   const [isUpdatingPublic, setIsUpdatingPublic] = React.useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = React.useState(false);
+  const reportRef = React.useRef<HTMLDivElement>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -84,7 +88,7 @@ export default function GithubDNA() {
       const res = await fetch(`/api/github-dna/reports/${reportToDisplay.id}/visibility`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isPublic: newStatus }),
+        body: JSON.stringify({ isPublic: newStatus, leaderboardOptIn: newStatus }),
       });
       if (!res.ok) throw new Error("Failed to update visibility");
       
@@ -104,6 +108,28 @@ export default function GithubDNA() {
       });
     } finally {
       setIsUpdatingPublic(false);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!reportToDisplay || isDownloadingPdf) return;
+    setIsDownloadingPdf(true);
+    try {
+      const username = reportToDisplay.githubUsername || "user";
+      const dateStr = new Date().toISOString().split("T")[0];
+      await downloadReportAsPdf(reportRef.current, `EngineerDNA-GitHubDNA-${username}-${dateStr}.pdf`);
+      toast({
+        title: "PDF Downloaded! 📄",
+        description: `Saved EngineerDNA-GitHubDNA-${username}-${dateStr}.pdf`,
+      });
+    } catch (err) {
+      toast({
+        title: "PDF Export Failed",
+        description: err instanceof Error ? err.message : "Could not generate PDF.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloadingPdf(false);
     }
   };
 
@@ -165,6 +191,24 @@ export default function GithubDNA() {
             <Button variant="outline" size="sm" onClick={copyBadgeMarkdown} className="gap-2">
               <Code className="w-4 h-4" /> Copy Badge SVG
             </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadPdf}
+              disabled={isDownloadingPdf}
+              className="gap-2 border-primary/30 hover:bg-primary/10"
+            >
+              {isDownloadingPdf ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-primary" /> Generating PDF...
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 text-primary" /> Download Report
+                </>
+              )}
+            </Button>
           </div>
         )}
       </div>
@@ -217,6 +261,7 @@ export default function GithubDNA() {
 
       {reportToDisplay && reportToDisplay.status === "completed" && meta && (
         <motion.div
+          ref={reportRef}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="space-y-6"

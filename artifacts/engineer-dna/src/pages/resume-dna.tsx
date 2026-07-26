@@ -10,7 +10,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { FileText, Target, Search, AlertCircle, Wand2, Check, RefreshCw } from "lucide-react"
+import { downloadReportAsPdf } from "@/lib/downloadReportAsPdf"
+import { useToast } from "@/hooks/use-toast"
+import { FileText, Target, Search, AlertCircle, Wand2, Check, RefreshCw, Download, Loader2 } from "lucide-react"
 
 const formSchema = z.object({
   targetRole: z.string().optional(),
@@ -19,11 +21,37 @@ const formSchema = z.object({
 
 export default function ResumeDNA() {
   const queryClient = useQueryClient()
+  const { toast } = useToast()
   const { data: reports, isLoading: isListLoading } = useListResumeReports()
   
   const latestReport = reports && reports.length > 0 ? reports[0] : null
   const analyze = useAnalyzeResume()
   const [lastValues, setLastValues] = React.useState<{ resumeText: string; targetRole?: string } | null>(null)
+
+  const [isDownloadingPdf, setIsDownloadingPdf] = React.useState(false)
+  const reportRef = React.useRef<HTMLDivElement>(null)
+
+  const handleDownloadPdf = async () => {
+    if (!latestReport || isDownloadingPdf) return
+    setIsDownloadingPdf(true)
+    try {
+      const dateStr = new Date().toISOString().split("T")[0]
+      const username = (latestReport as any).targetRole ? (latestReport as any).targetRole.replace(/\s+/g, "_") : "Report"
+      await downloadReportAsPdf(reportRef.current, `EngineerDNA-ResumeDNA-${username}-${dateStr}.pdf`)
+      toast({
+        title: "PDF Downloaded! 📄",
+        description: `Saved EngineerDNA-ResumeDNA-${username}-${dateStr}.pdf`,
+      })
+    } catch (err) {
+      toast({
+        title: "PDF Export Failed",
+        description: err instanceof Error ? err.message : "Could not generate PDF.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsDownloadingPdf(false)
+    }
+  }
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -56,14 +84,36 @@ export default function ResumeDNA() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex items-center gap-4">
-        <div className="p-3 bg-accent/10 text-accent rounded-xl">
-          <FileText className="w-8 h-8" />
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="p-3 bg-accent/10 text-accent rounded-xl">
+            <FileText className="w-8 h-8" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Resume DNA</h1>
+            <p className="text-muted-foreground">Impact-driven text analysis and skill gap detection.</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Resume DNA</h1>
-          <p className="text-muted-foreground">Impact-driven text analysis and skill gap detection.</p>
-        </div>
+
+        {latestReport && latestReport.status !== "failed" && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDownloadPdf}
+            disabled={isDownloadingPdf}
+            className="gap-2 border-primary/30 hover:bg-primary/10 shrink-0"
+          >
+            {isDownloadingPdf ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin text-primary" /> Generating PDF...
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4 text-primary" /> Download Report
+              </>
+            )}
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -125,7 +175,7 @@ export default function ResumeDNA() {
               </div>
             </Card>
           ) : latestReport ? (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+            <motion.div ref={reportRef} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
               
               <div className="grid grid-cols-3 gap-4">
                 <ScoreCard title="Writing Quality" score={latestReport.writingQualityScore || 0} />

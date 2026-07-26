@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
-import * as schema from "./schema";
+import * as schema from "./schema/index.js";
 
 const { Pool } = pg;
 
@@ -10,8 +10,13 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
+const isSslRequired =
+  process.env.DATABASE_URL.includes("sslmode=") ||
+  process.env.DATABASE_URL.includes("neon.tech");
+
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  ssl: isSslRequired ? { rejectUnauthorized: false } : undefined,
   max: 20, // Limit maximum concurrent connections
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,

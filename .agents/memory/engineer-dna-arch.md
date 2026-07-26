@@ -14,12 +14,10 @@ description: Key decisions, patterns, and constraints for the EngineerDNA SaaS e
 - Route in: `GET /api/auth/github` → `GET /api/auth/github/callback`
 
 ## AI
-- User provides their own `OPENAI_API_KEY` secret (Replit AI integration declined)
-- Client init: `artifacts/api-server/src/lib/ai.ts` using OpenAI directly
-- All analysis routes use `gpt-4o-mini` with `response_format: { type: "json_object" }`
-- AI routes always try/catch; on failure: mark report as "failed" + return 500 (except mentor which stores fallback message)
-
-**Why:** Replit AI integration requires account upgrade which user declined.
+- Uses Google Gemini API via `GEMINI_API_KEY`
+- Client init: `artifacts/api-server/src/lib/ai.ts` using `@google/genai`
+- All analysis routes use `gemini-2.5-flash` with structured JSON generation (`responseMimeType: "application/json"`)
+- AI routes always try/catch; on failure: mark report as "failed" + return 500
 
 ## DB Schema
 - All tables in `lib/db/src/schema/` — one file per domain
@@ -41,11 +39,11 @@ description: Key decisions, patterns, and constraints for the EngineerDNA SaaS e
 - Mutation signatures (path params): `useSendMentorMessage({ id, data: { content } })`
 - All timestamps serialized via JSON.parse(JSON.stringify()) before returning
 
-## OpenAI Package
-- `openai: ^4.77.0` added directly to `artifacts/api-server/package.json`
-- NOT using `@workspace/integrations-openai-ai-server` (requires Replit AI plan upgrade)
+## Google Gemini Integration
+- `@google/genai: ^2.12.0` added to `artifacts/api-server/package.json`
+- Model: `gemini-2.5-flash`
 
 ## GitHub Analysis
 - Fetches real data: `/users/{username}` + `/users/{username}/repos?per_page=50`
-- Passes to GPT for structured analysis — not mocked
+- Passes to Gemini for structured analysis — not mocked
 - Report stored immediately as "analyzing", updated to "completed" or "failed"

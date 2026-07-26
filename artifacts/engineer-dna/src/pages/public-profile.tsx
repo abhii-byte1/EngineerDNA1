@@ -17,10 +17,13 @@ import {
   Globe,
   Layers,
   Cpu,
-  Code
+  Code,
+  Download,
+  Loader2
 } from "lucide-react";
 import { getArchetypeMeta } from "@/lib/archetypes";
 import { FeedbackWidget } from "@/components/feedback-widget";
+import { downloadReportAsPdf } from "@/lib/downloadReportAsPdf";
 
 interface PublicProfileData {
   githubUsername: string;
@@ -43,6 +46,30 @@ export default function PublicProfile() {
   const [data, setData] = React.useState<PublicProfileData | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [isDownloadingPdf, setIsDownloadingPdf] = React.useState(false);
+  const reportRef = React.useRef<HTMLDivElement>(null);
+
+  const handleDownloadPdf = async () => {
+    if (!data || isDownloadingPdf) return;
+    setIsDownloadingPdf(true);
+    try {
+      const handle = data.githubUsername || "User";
+      const dateStr = new Date().toISOString().split("T")[0];
+      await downloadReportAsPdf(reportRef.current, `EngineerDNA-GitHubDNA-${handle}-${dateStr}.pdf`);
+      toast({
+        title: "PDF Downloaded! 📄",
+        description: `Saved EngineerDNA-GitHubDNA-${handle}-${dateStr}.pdf`,
+      });
+    } catch (err) {
+      toast({
+        title: "PDF Export Failed",
+        description: err instanceof Error ? err.message : "Could not generate PDF.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
 
   React.useEffect(() => {
     if (!username) return;
@@ -134,27 +161,46 @@ export default function PublicProfile() {
   return (
     <div className="min-h-screen bg-background text-foreground p-4 md:p-12 flex flex-col items-center justify-center">
       <div className="max-w-3xl w-full space-y-8 animate-in fade-in zoom-in-95 duration-500">
-        {/* Header card */}
-        <div className="relative rounded-2xl border border-border bg-card/40 backdrop-blur-2xl p-8 overflow-hidden shadow-2xl">
-          {/* Subtle background glow */}
-          <div className={`absolute -top-24 -right-24 w-72 h-72 rounded-full bg-gradient-to-br ${meta.gradient} opacity-20 blur-3xl`} />
+        <div ref={reportRef} className="space-y-8">
+          {/* Header card */}
+          <div className="relative rounded-2xl border border-border bg-card/40 backdrop-blur-2xl p-8 overflow-hidden shadow-2xl">
+            {/* Subtle background glow */}
+            <div className={`absolute -top-24 -right-24 w-72 h-72 rounded-full bg-gradient-to-br ${meta.gradient} opacity-20 blur-3xl`} />
 
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <span className="font-mono text-xs text-muted-foreground tracking-widest uppercase">ENGINEER DNA SCORECARD</span>
-                <Badge variant="outline" className="font-mono text-xs border-primary/30 text-primary">
-                  VERIFIED SNAPSHOT
-                </Badge>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="font-mono text-xs text-muted-foreground tracking-widest uppercase">ENGINEER DNA SCORECARD</span>
+                  <Badge variant="outline" className="font-mono text-xs border-primary/30 text-primary">
+                    VERIFIED SNAPSHOT
+                  </Badge>
+                </div>
+                <h1 className="text-3xl md:text-4xl font-bold tracking-tight font-mono">@{data.githubUsername}</h1>
+                <p className="text-sm text-muted-foreground mt-1">{data.archetypeDescription}</p>
               </div>
-              <h1 className="text-3xl md:text-4xl font-bold tracking-tight font-mono">@{data.githubUsername}</h1>
-              <p className="text-sm text-muted-foreground mt-1">{data.archetypeDescription}</p>
-            </div>
 
-            <Button onClick={handleShare} variant="outline" className="gap-2 shrink-0 border-border hover:bg-primary/10">
-              <Share2 className="w-4 h-4 text-primary" /> Share Scorecard
-            </Button>
-          </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <Button onClick={handleShare} variant="outline" className="gap-2 border-border hover:bg-primary/10">
+                  <Share2 className="w-4 h-4 text-primary" /> Share Scorecard
+                </Button>
+                <Button
+                  onClick={handleDownloadPdf}
+                  variant="outline"
+                  disabled={isDownloadingPdf}
+                  className="gap-2 border-primary/30 hover:bg-primary/10"
+                >
+                  {isDownloadingPdf ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-primary" /> Generating PDF...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4 text-primary" /> Download Report
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 pt-8 border-t border-border/60">
             {/* Overall score hero */}
@@ -232,6 +278,7 @@ export default function PublicProfile() {
 
         {/* Feedback Widget */}
         <FeedbackWidget context="scorecard" contextId={data.githubUsername} title="Was this scorecard feedback helpful?" />
+        </div>
 
         {/* Call to action footer */}
         <div className="text-center p-8 rounded-2xl border border-primary/20 bg-gradient-to-b from-primary/5 to-transparent space-y-4">

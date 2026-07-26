@@ -15,8 +15,11 @@ import {
   AlertTriangle, 
   Trophy,
   Zap,
-  Info
+  Info,
+  Download,
+  Loader2
 } from "lucide-react";
+import { downloadReportAsPdf } from "@/lib/downloadReportAsPdf";
 import { useGetMe } from "@workspace/api-client-react";
 import { getArchetypeMeta } from "@/lib/archetypes";
 import { FeedbackWidget } from "@/components/feedback-widget";
@@ -48,6 +51,8 @@ export default function RoastPage() {
     return import.meta.env.DEV ? "dev-turnstile-token" : "";
   });
   const turnstileRef = React.useRef<HTMLDivElement>(null);
+  const reportRef = React.useRef<HTMLDivElement>(null);
+  const [isDownloadingPdf, setIsDownloadingPdf] = React.useState(false);
   const { toast } = useToast();
 
   React.useEffect(() => {
@@ -118,6 +123,28 @@ export default function RoastPage() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!result || isDownloadingPdf) return;
+    setIsDownloadingPdf(true);
+    try {
+      const handle = username.trim() || "User";
+      const dateStr = new Date().toISOString().split("T")[0];
+      await downloadReportAsPdf(reportRef.current, `EngineerDNA-Roast-${handle}-${dateStr}.pdf`);
+      toast({
+        title: "PDF Downloaded! 📄",
+        description: `Saved EngineerDNA-Roast-${handle}-${dateStr}.pdf`,
+      });
+    } catch (err) {
+      toast({
+        title: "PDF Export Failed",
+        description: err instanceof Error ? err.message : "Could not generate PDF.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloadingPdf(false);
     }
   };
 
@@ -204,7 +231,7 @@ export default function RoastPage() {
       {/* Results View */}
       {result && (
         <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
-          <div className="rounded-2xl border border-border bg-card/40 backdrop-blur-xl p-8 space-y-6 shadow-2xl relative overflow-hidden">
+          <div ref={reportRef} className="rounded-2xl border border-border bg-card/40 backdrop-blur-xl p-8 space-y-6 shadow-2xl relative overflow-hidden">
             {/* Header info */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
@@ -213,17 +240,37 @@ export default function RoastPage() {
                 <p className="text-sm text-muted-foreground mt-1">{result.archetypeDescription}</p>
               </div>
 
-              <div className="flex items-center gap-4 bg-background/80 border border-border rounded-xl p-4">
-                <div className="text-right">
-                  <div className="text-xs font-semibold text-muted-foreground">SCORE</div>
-                  <div className="text-3xl font-bold font-mono text-primary">{result.overallScore}</div>
-                </div>
-                {result.percentile !== null && (
-                  <div className="text-right border-l border-border pl-4">
-                    <div className="text-xs font-semibold text-muted-foreground">PERCENTILE</div>
-                    <div className="text-sm font-bold text-amber-400">Top {100 - result.percentile}%</div>
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownloadPdf}
+                  disabled={isDownloadingPdf}
+                  className="gap-2 border-primary/30 hover:bg-primary/10"
+                >
+                  {isDownloadingPdf ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-primary" /> Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4 text-primary" /> Download Report
+                    </>
+                  )}
+                </Button>
+
+                <div className="flex items-center gap-4 bg-background/80 border border-border rounded-xl p-4">
+                  <div className="text-right">
+                    <div className="text-xs font-semibold text-muted-foreground">SCORE</div>
+                    <div className="text-3xl font-bold font-mono text-primary">{result.overallScore}</div>
                   </div>
-                )}
+                  {result.percentile !== null && (
+                    <div className="text-right border-l border-border pl-4">
+                      <div className="text-xs font-semibold text-muted-foreground">PERCENTILE</div>
+                      <div className="text-sm font-bold text-amber-400">Top {100 - result.percentile}%</div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
