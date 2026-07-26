@@ -1,4 +1,4 @@
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 
 // General limiter: 100 requests per 15 minutes per IP
 export const generalLimiter = rateLimit({
@@ -24,7 +24,7 @@ const aiUserLimiter = rateLimit({
     if (authReq.user?.id) {
       return `user_${authReq.user.id}`;
     }
-    return req.ip || req.socket.remoteAddress || "unknown_ip";
+    return ipKeyGenerator(req.ip || req.socket.remoteAddress || "unknown_ip");
   },
 });
 

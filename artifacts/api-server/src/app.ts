@@ -10,6 +10,9 @@ import { logger } from "./lib/logger";
 
 const app: Express = express();
 
+// Trust single reverse proxy hop (Render) for accurate client IP resolution
+app.set("trust proxy", 1);
+
 if (!process.env.NODE_ENV) {
   throw new Error("NODE_ENV must be explicitly set (e.g., 'production' or 'development').");
 }
