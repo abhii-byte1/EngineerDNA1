@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { z } from "zod";
 import { roastLimiter } from "../lib/rate-limiters";
+import { optionalAuth } from "../middlewares/optional-auth";
+import type { AuthenticatedRequest } from "../middlewares/auth";
 import { analyzeGitHubProfile, type GitHubAnalysisResult } from "../lib/github-analysis";
 import { getScorePercentile, db } from "@workspace/db";
 import { verifyTurnstile } from "../lib/turnstile";
@@ -25,7 +27,6 @@ interface CachedRoast {
 const roastCache = new Map<string, CachedRoast>();
 const TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-// Helper to clean expired cache entries periodically
 function getCachedResult(key: string) {
   const cached = roastCache.get(key);
   if (!cached) return null;
@@ -36,8 +37,46 @@ function getCachedResult(key: string) {
   return cached.data;
 }
 
+function formatRoastResponse(
+  raw: GitHubAnalysisResult & { percentile: number | null; cohortSize: number },
+  locked: boolean
+) {
+  const headlineStrengths = (raw.headlineStrengths || raw.strengths || []).slice(0, 2);
+  const visible = {
+    score: raw.overallScore,
+    overallScore: raw.overallScore,
+    archetype: raw.archetype,
+    archetypeDescription: raw.archetypeDescription,
+    headlineStrengths,
+    topLanguages: raw.topLanguages || [],
+    techStack: raw.techStack || [],
+  };
+
+  if (locked) {
+    return {
+      visible,
+      locked: true,
+      overallScore: raw.overallScore,
+      archetype: raw.archetype,
+      archetypeDescription: raw.archetypeDescription,
+      headlineStrengths,
+      topLanguages: raw.topLanguages || [],
+      techStack: raw.techStack || [],
+      percentile: raw.percentile,
+      cohortSize: raw.cohortSize,
+    };
+  }
+
+  return {
+    visible,
+    locked: false,
+    ...raw,
+    headlineStrengths,
+  };
+}
+
 // POST /api/roast
-router.post("/", roastLimiter, async (req, res) => {
+router.post("/", optionalAuth, roastLimiter, async (req, res) => {
   const parsed = roastSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid input", details: parsed.error.flatten().fieldErrors });
@@ -53,11 +92,12 @@ router.post("/", roastLimiter, async (req, res) => {
   }
 
   const cacheKey = `roast:${githubUsername.toLowerCase()}:${mode}`;
+  const locked = !(req as AuthenticatedRequest).user;
 
   // Check 24h cache first
   const cached = getCachedResult(cacheKey);
   if (cached) {
-    res.json({ ...cached, cached: true });
+    res.json({ ...formatRoastResponse(cached, locked), cached: true });
     return;
   }
 
@@ -65,16 +105,16 @@ router.post("/", roastLimiter, async (req, res) => {
     const analysis = await analyzeGitHubProfile(githubUsername, mode);
     const { percentile, cohortSize } = await getScorePercentile(db, analysis.overallScore);
 
-    const payload = {
+    const rawData = {
       ...analysis,
       percentile,
       cohortSize,
     };
 
     // Store in cache
-    roastCache.set(cacheKey, { data: payload, timestamp: Date.now() });
+    roastCache.set(cacheKey, { data: rawData, timestamp: Date.now() });
 
-    res.json(payload);
+    res.json(formatRoastResponse(rawData, locked));
   } catch (err) {
     console.error("[roast] analysis error:", err);
     const errorMsg = err instanceof Error ? err.message : "Roast generation failed. Please try again.";

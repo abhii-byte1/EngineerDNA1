@@ -17,6 +17,7 @@ import {
   Zap,
   Info
 } from "lucide-react";
+import { useGetMe } from "@workspace/api-client-react";
 import { getArchetypeMeta } from "@/lib/archetypes";
 import { FeedbackWidget } from "@/components/feedback-widget";
 
@@ -24,17 +25,19 @@ interface RoastResponse {
   overallScore: number;
   archetype: string;
   archetypeDescription: string;
-  headlineStrengths: string[];
-  strengths: string[];
-  weaknesses: string[];
+  headlineStrengths?: string[];
+  strengths?: string[];
+  weaknesses?: string[];
   techStack: string[];
   topLanguages: string[];
   roastBullets?: string[];
   percentile: number | null;
   cohortSize: number;
+  locked?: boolean;
 }
 
 export default function RoastPage() {
+  const { data: me } = useGetMe();
   const [username, setUsername] = React.useState("");
   const [mode, setMode] = React.useState<"roast" | "coach">("roast");
   const [loading, setLoading] = React.useState(false);
@@ -238,32 +241,16 @@ export default function RoastPage() {
               );
             })()}
 
-            {/* Roast Bullets */}
-            {result.roastBullets && result.roastBullets.length > 0 && (
-              <div className="space-y-3 pt-4 border-t border-border">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-orange-400 flex items-center gap-2">
-                  <Flame className="w-4 h-4" /> Brutal Observations
-                </h3>
-                <div className="space-y-2">
-                  {result.roastBullets.map((bullet, idx) => (
-                    <div key={idx} className="p-4 rounded-xl bg-orange-500/5 border border-orange-500/20 text-sm font-medium">
-                      🔥 {bullet}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {/* Tech Stack */}
             <div className="pt-4 border-t border-border space-y-2">
               <span className="text-xs font-semibold text-muted-foreground uppercase">Top Languages & Tech</span>
               <div className="flex flex-wrap gap-2">
-                {result.topLanguages.map((lang) => (
+                {result.topLanguages?.map((lang) => (
                   <Badge key={lang} variant="secondary" className="font-mono text-xs">
                     {lang}
                   </Badge>
                 ))}
-                {result.techStack.map((tech) => (
+                {result.techStack?.map((tech) => (
                   <Badge key={tech} variant="outline" className="font-mono text-xs border-primary/20 text-primary">
                     {tech}
                   </Badge>
@@ -271,18 +258,87 @@ export default function RoastPage() {
               </div>
             </div>
 
-            {/* CTA Banner to save */}
-            <div className="p-6 rounded-xl bg-primary/10 border border-primary/20 text-center space-y-3">
-              <h3 className="text-lg font-bold">Want to save your analysis & track growth over time?</h3>
-              <p className="text-xs text-muted-foreground max-w-md mx-auto">
-                Sign in to build your official public scorecard, unlock interactive roadmaps, and compare ranks.
-              </p>
-              <Link href="/login">
-                <Button className="gap-2 font-bold">
-                  Sign In to Save Progress <ArrowRight className="w-4 h-4" />
-                </Button>
-              </Link>
-            </div>
+            {/* Headline Strengths (Teaser) */}
+            {result.headlineStrengths && result.headlineStrengths.length > 0 && (
+              <div className="pt-4 border-t border-border space-y-2">
+                <span className="text-xs font-semibold text-muted-foreground uppercase">Headline Strengths</span>
+                <div className="space-y-1.5">
+                  {result.headlineStrengths.map((str, idx) => (
+                    <div key={idx} className="text-sm font-medium flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                      {str}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Roast Bullets or Locked Teaser */}
+            {result.locked ? (
+              <div className="relative mt-6">
+                <div className="absolute inset-0 backdrop-blur-md bg-background/60 flex items-center justify-center z-10 rounded-xl">
+                  <div className="text-center p-6 max-w-md">
+                    <p className="font-medium mb-2 text-lg text-foreground">Unlock your full report</p>
+                    <p className="text-xs text-muted-foreground mb-4">
+                      Sign in to view brutal observations, detailed strengths, and actionable growth recommendations.
+                    </p>
+                    <Link href="/login">
+                      <Button size="lg" className="font-bold">Sign in — it's free</Button>
+                    </Link>
+                  </div>
+                </div>
+                <div className="opacity-30 pointer-events-none select-none space-y-4 p-6 rounded-xl border border-border bg-card">
+                  <div className="h-6 w-1/3 bg-muted rounded animate-pulse mb-4" />
+                  <div className="h-4 w-full bg-muted rounded animate-pulse" />
+                  <div className="h-4 w-5/6 bg-muted rounded animate-pulse" />
+                  <div className="h-4 w-4/6 bg-muted rounded animate-pulse" />
+                  <div className="h-20 w-full bg-muted rounded animate-pulse mt-6" />
+                  <div className="h-16 w-full bg-muted rounded animate-pulse" />
+                </div>
+              </div>
+            ) : (
+              result.roastBullets && result.roastBullets.length > 0 && (
+                <div className="space-y-3 pt-4 border-t border-border">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-orange-400 flex items-center gap-2">
+                    <Flame className="w-4 h-4" /> Brutal Observations
+                  </h3>
+                  <div className="space-y-2">
+                    {result.roastBullets.map((bullet, idx) => (
+                      <div key={idx} className="p-4 rounded-xl bg-orange-500/5 border border-orange-500/20 text-sm font-medium">
+                        🔥 {bullet}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            )}
+
+            {/* CTA Banner to save (gated on real auth state) */}
+            {me ? (
+              <div className="p-6 rounded-xl bg-primary/10 border border-primary/20 text-center space-y-3">
+                <h3 className="text-lg font-bold">Nice roast!</h3>
+                <p className="text-xs text-muted-foreground max-w-md mx-auto">
+                  Want to track this over time and get your full growth roadmap?
+                </p>
+                <Link href="/dashboard">
+                  <Button className="gap-2 font-bold">
+                    Save to My Dashboard <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="p-6 rounded-xl bg-primary/10 border border-primary/20 text-center space-y-3">
+                <h3 className="text-lg font-bold">Want to save your analysis & track growth over time?</h3>
+                <p className="text-xs text-muted-foreground max-w-md mx-auto">
+                  Sign in to build your official public scorecard, unlock interactive roadmaps, and compare ranks.
+                </p>
+                <Link href="/login">
+                  <Button className="gap-2 font-bold">
+                    Sign In to Save Progress <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </Link>
+              </div>
+            )}
 
             {/* Feedback Widget */}
             <div className="pt-4 border-t border-border">
