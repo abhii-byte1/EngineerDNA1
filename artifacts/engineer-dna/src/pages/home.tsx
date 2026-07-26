@@ -76,7 +76,7 @@ export default function Home() {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, delay: 0.2, ease: "easeOut" }}
-            className="flex-1 w-full max-w-lg md:max-w-none relative"
+            className="flex-1 w-full max-w-lg lg:max-w-none relative"
           >
             <div className="aspect-square relative rounded-2xl overflow-hidden border border-border shadow-2xl shadow-primary/10">
               <img 
