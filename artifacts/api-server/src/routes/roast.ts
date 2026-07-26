@@ -38,40 +38,29 @@ function getCachedResult(key: string) {
 }
 
 function formatRoastResponse(
-  raw: GitHubAnalysisResult & { percentile: number | null; cohortSize: number },
+  fullPayload: GitHubAnalysisResult & { percentile: number | null; cohortSize: number },
   locked: boolean
 ) {
-  const headlineStrengths = (raw.headlineStrengths || raw.strengths || []).slice(0, 2);
-  const visible = {
-    score: raw.overallScore,
-    overallScore: raw.overallScore,
-    archetype: raw.archetype,
-    archetypeDescription: raw.archetypeDescription,
-    headlineStrengths,
-    topLanguages: raw.topLanguages || [],
-    techStack: raw.techStack || [],
-  };
+  const headlineStrengths = (fullPayload.headlineStrengths || fullPayload.strengths || []).slice(0, 2);
 
   if (locked) {
     return {
-      visible,
-      locked: true,
-      overallScore: raw.overallScore,
-      archetype: raw.archetype,
-      archetypeDescription: raw.archetypeDescription,
+      overallScore: fullPayload.overallScore,
+      archetype: fullPayload.archetype,
+      archetypeDescription: fullPayload.archetypeDescription,
       headlineStrengths,
-      topLanguages: raw.topLanguages || [],
-      techStack: raw.techStack || [],
-      percentile: raw.percentile,
-      cohortSize: raw.cohortSize,
+      topLanguages: fullPayload.topLanguages || [],
+      techStack: fullPayload.techStack || [],
+      percentile: fullPayload.percentile,
+      cohortSize: fullPayload.cohortSize,
+      locked: true,
     };
   }
 
   return {
-    visible,
-    locked: false,
-    ...raw,
+    ...fullPayload,
     headlineStrengths,
+    locked: false,
   };
 }
 
@@ -92,7 +81,8 @@ router.post("/", optionalAuth, roastLimiter, async (req, res) => {
   }
 
   const cacheKey = `roast:${githubUsername.toLowerCase()}:${mode}`;
-  const locked = !(req as AuthenticatedRequest).user;
+  const authReq = req as AuthenticatedRequest;
+  const locked = !authReq.user;
 
   // Check 24h cache first
   const cached = getCachedResult(cacheKey);
@@ -105,16 +95,16 @@ router.post("/", optionalAuth, roastLimiter, async (req, res) => {
     const analysis = await analyzeGitHubProfile(githubUsername, mode);
     const { percentile, cohortSize } = await getScorePercentile(db, analysis.overallScore);
 
-    const rawData = {
+    const fullPayload = {
       ...analysis,
       percentile,
       cohortSize,
     };
 
-    // Store in cache
-    roastCache.set(cacheKey, { data: rawData, timestamp: Date.now() });
+    // Store FULL payload in cache
+    roastCache.set(cacheKey, { data: fullPayload, timestamp: Date.now() });
 
-    res.json(formatRoastResponse(rawData, locked));
+    res.json(formatRoastResponse(fullPayload, locked));
   } catch (err) {
     console.error("[roast] analysis error:", err);
     const errorMsg = err instanceof Error ? err.message : "Roast generation failed. Please try again.";
