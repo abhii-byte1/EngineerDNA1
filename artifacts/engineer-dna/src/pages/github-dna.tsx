@@ -135,6 +135,31 @@ export default function GithubDNA() {
     }
   };
 
+  const handleRefreshScore = () => {
+    const username = reportToDisplay?.githubUsername || lastUsername;
+    if (!username) return;
+
+    analyze.mutate(
+      { data: { githubUsername: username } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListGithubReportsQueryKey() });
+          toast({
+            title: "Re-analyzing GitHub DNA 🔄",
+            description: `Fetching updated repositories & commits for @${username}...`,
+          });
+        },
+        onError: (err: any) => {
+          toast({
+            title: "Refresh failed",
+            description: err instanceof Error ? err.message : "Could not re-analyze profile. Please try again.",
+            variant: "destructive",
+          });
+        },
+      }
+    );
+  };
+
   const copyBadgeMarkdown = () => {
     if (!reportToDisplay?.githubUsername) return;
     const badgeMarkdown = `[![EngineerDNA Score](https://${window.location.host}/api/badge/${reportToDisplay.githubUsername}.svg)](https://${window.location.host}/u/${reportToDisplay.githubUsername})`;
@@ -171,9 +196,20 @@ export default function GithubDNA() {
         </div>
 
         {reportToDisplay && reportToDisplay.status === "completed" && (
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Button
-              variant={reportToDisplay.isPublic ? "outline" : "default"}
+              variant="default"
+              size="sm"
+              onClick={handleRefreshScore}
+              disabled={isAnalyzing}
+              className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+            >
+              <RefreshCw className={`w-4 h-4 ${isAnalyzing ? "animate-spin" : ""}`} />
+              {isAnalyzing ? "Refreshing Score..." : "Refresh Score"}
+            </Button>
+
+            <Button
+              variant={reportToDisplay.isPublic ? "outline" : "secondary"}
               size="sm"
               onClick={() => togglePublicStatus(!reportToDisplay.isPublic)}
               disabled={isUpdatingPublic}
@@ -360,6 +396,33 @@ export default function GithubDNA() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Refresh Score Banner after fixing issues */}
+          <Card className="border-primary/30 bg-gradient-to-r from-primary/10 via-card to-primary/5 shadow-sm">
+            <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-primary/20 text-primary rounded-xl shrink-0">
+                  <RefreshCw className={`w-6 h-6 ${isAnalyzing ? "animate-spin" : ""}`} />
+                </div>
+                <div>
+                  <h4 className="font-bold text-base flex items-center gap-2">
+                    Fixed issues on your GitHub profile? 🚀
+                  </h4>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    Pushed code updates or resolved anti-patterns for @{reportToDisplay.githubUsername}? Re-run GitHub DNA analysis to refresh your overall score and clear fixed weaknesses.
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={handleRefreshScore}
+                disabled={isAnalyzing}
+                className="shrink-0 gap-2 font-semibold shadow-md"
+              >
+                <RefreshCw className={`w-4 h-4 ${isAnalyzing ? "animate-spin" : ""}`} />
+                {isAnalyzing ? "Re-analyzing..." : "Refresh Score Now"}
+              </Button>
+            </CardContent>
+          </Card>
 
           {/* Deep Insights */}
           <h2 className="text-2xl font-bold tracking-tight mt-12 mb-6 flex items-center gap-2">
