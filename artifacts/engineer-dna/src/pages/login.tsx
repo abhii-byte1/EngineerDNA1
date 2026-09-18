@@ -80,6 +80,7 @@ const TRUST_BADGES = [
 ]
 
 export default function Login() {
+  const [authMode, setAuthMode] = React.useState<"login" | "signup">("login")
   const [showPermissions, setShowPermissions] = React.useState(false)
 
   return (
@@ -146,24 +147,54 @@ export default function Login() {
       </div>
 
       {/* ── Right panel — Auth + Trust ── */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 relative">
+      <div className="flex-1 flex flex-col items-center justify-start md:justify-center p-6 md:p-12 relative overflow-y-auto max-h-screen py-12">
 
         {/* Mobile logo */}
-        <Link href="/" className="absolute top-6 left-6 md:hidden flex items-center gap-2 font-mono font-bold tracking-tighter">
+        <Link href="/" className="absolute top-5 left-6 md:hidden flex items-center gap-2 font-mono font-bold tracking-tighter">
           <div className="w-6 h-6 rounded bg-primary text-primary-foreground flex items-center justify-center text-xs">DNA</div>
           EngineerDNA
         </Link>
 
-        <div className="w-full max-w-md space-y-6">
+        <div className="w-full max-w-md space-y-6 my-auto pt-10 md:pt-0">
+
+          {/* Log In / Sign Up Mode Switcher */}
+          <div className="grid grid-cols-2 p-1 bg-muted/60 rounded-xl border border-border/60 text-sm font-medium">
+            <button
+              type="button"
+              onClick={() => setAuthMode("login")}
+              className={`py-2 rounded-lg transition-all ${
+                authMode === "login"
+                  ? "bg-card text-foreground shadow-sm font-bold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Log In
+            </button>
+            <button
+              type="button"
+              onClick={() => setAuthMode("signup")}
+              className={`py-2 rounded-lg transition-all ${
+                authMode === "signup"
+                  ? "bg-card text-foreground shadow-sm font-bold"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Sign Up
+            </button>
+          </div>
 
           {/* Header */}
           <div className="text-center space-y-2">
-            <h2 className="text-2xl font-bold tracking-tight">Sign in to get started</h2>
+            <h2 className="text-2xl font-bold tracking-tight">
+              {authMode === "login" ? "Welcome back to EngineerDNA" : "Create your EngineerDNA account"}
+            </h2>
             <p className="text-sm text-muted-foreground mt-1">
-              New or returning — one click with GitHub either way.
+              {authMode === "login"
+                ? "Sign in to access your engineering score, dashboard, and reports."
+                : "Get started in seconds — one click with GitHub or Google."}
             </p>
             <p className="text-muted-foreground text-xs">
-              We use GitHub or Google to verify you're a real engineer — nothing more.
+              We use GitHub or Google to verify your identity — read-only access only.
             </p>
           </div>
 
@@ -188,7 +219,7 @@ export default function Login() {
                 className="flex items-center justify-center w-full gap-3 bg-foreground text-background hover:bg-foreground/90 h-13 py-3.5 rounded-xl font-semibold text-base transition-all hover:scale-[1.01] active:scale-[0.99] shadow-lg shadow-foreground/10 relative z-10"
               >
                 <Github className="w-5 h-5" />
-                Continue with GitHub
+                {authMode === "login" ? "Sign In with GitHub" : "Sign Up with GitHub"}
               </a>
             </div>
 
@@ -199,7 +230,7 @@ export default function Login() {
               className="flex items-center justify-center w-full gap-3 border border-border bg-card hover:bg-muted h-12 py-3 rounded-xl font-medium text-base text-foreground transition-all hover:scale-[1.01] active:scale-[0.99]"
             >
               <GoogleIcon className="w-5 h-5 text-foreground" />
-              Continue with Google
+              {authMode === "login" ? "Sign In with Google" : "Sign Up with Google"}
             </a>
           </div>
 

@@ -59,6 +59,7 @@ export default function GithubDNA() {
 
   const analyze = useAnalyzeGithub();
   const [lastUsername, setLastUsername] = React.useState("");
+  const [isEditingUsername, setIsEditingUsername] = React.useState(false);
   const [showOptInModal, setShowOptInModal] = React.useState(false);
   const [isUpdatingPublic, setIsUpdatingPublic] = React.useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = React.useState(false);
@@ -69,18 +70,48 @@ export default function GithubDNA() {
     defaultValues: { username: "" },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    setLastUsername(values.username);
+  const handleRefreshScore = (overrideUsername?: string) => {
+    const username = overrideUsername || reportToDisplay?.githubUsername || lastUsername;
+    if (!username) return;
+
+    toast({
+      title: "Refreshing GitHub DNA 🔄",
+      description: `Fetching updated repositories & commit history for @${username}...`,
+    });
+
     analyze.mutate(
-      { data: { githubUsername: values.username } },
+      { data: { githubUsername: username } },
       {
-        onSuccess: () => {
+        onSuccess: (updatedReport: any) => {
+          queryClient.setQueryData(getListGithubReportsQueryKey(), (old: any) => {
+            if (Array.isArray(old)) {
+              return [updatedReport, ...old.filter((r: any) => r.id !== updatedReport.id)];
+            }
+            return [updatedReport];
+          });
           queryClient.invalidateQueries({ queryKey: getListGithubReportsQueryKey() });
-          form.reset();
+          setIsEditingUsername(false);
           setShowOptInModal(true);
+          toast({
+            title: "Score Refreshed! 🎉",
+            description: `Updated profile score for @${username} to ${updatedReport.overallScore || 0}.`,
+          });
+        },
+        onError: (err: any) => {
+          const msg = err instanceof Error ? err.message : (typeof err === "object" && err?.error ? String(err.error) : "Could not re-analyze profile. Please try again.");
+          toast({
+            title: "Refresh failed",
+            description: msg,
+            variant: "destructive",
+          });
         },
       }
     );
+  };
+
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    setLastUsername(values.username);
+    handleRefreshScore(values.username);
   };
 
   const togglePublicStatus = async (newStatus: boolean) => {
@@ -135,31 +166,6 @@ export default function GithubDNA() {
     }
   };
 
-  const handleRefreshScore = () => {
-    const username = reportToDisplay?.githubUsername || lastUsername;
-    if (!username) return;
-
-    analyze.mutate(
-      { data: { githubUsername: username } },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getListGithubReportsQueryKey() });
-          toast({
-            title: "Re-analyzing GitHub DNA 🔄",
-            description: `Fetching updated repositories & commits for @${username}...`,
-          });
-        },
-        onError: (err: any) => {
-          toast({
-            title: "Refresh failed",
-            description: err instanceof Error ? err.message : "Could not re-analyze profile. Please try again.",
-            variant: "destructive",
-          });
-        },
-      }
-    );
-  };
-
   const copyBadgeMarkdown = () => {
     if (!reportToDisplay?.githubUsername) return;
     const badgeMarkdown = `[![EngineerDNA Score](https://${window.location.host}/api/badge/${reportToDisplay.githubUsername}.svg)](https://${window.location.host}/u/${reportToDisplay.githubUsername})`;
@@ -200,12 +206,23 @@ export default function GithubDNA() {
             <Button
               variant="default"
               size="sm"
-              onClick={handleRefreshScore}
+              onClick={() => handleRefreshScore()}
               disabled={isAnalyzing}
               className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
             >
               <RefreshCw className={`w-4 h-4 ${isAnalyzing ? "animate-spin" : ""}`} />
               {isAnalyzing ? "Refreshing Score..." : "Refresh Score"}
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditingUsername(!isEditingUsername)}
+              disabled={isAnalyzing}
+              className="gap-2"
+            >
+              <Github className="w-4 h-4 text-muted-foreground" />
+              {isEditingUsername ? "Cancel" : "Change Handle"}
             </Button>
 
             <Button
@@ -251,19 +268,27 @@ export default function GithubDNA() {
         )}
       </div>
 
-      {!reportToDisplay && !isAnalyzing && (
+      {(!reportToDisplay || isEditingUsername) && !isAnalyzing && (
         <Card className="max-w-xl mx-auto mt-12 border-primary/20">
-          <CardHeader>
-            <CardTitle>Initialize GitHub Scan</CardTitle>
-            <CardDescription>
-              We'll analyze your public repositories, commit patterns, and technology choices to determine your engineering profile.
-            </CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>{isEditingUsername ? "Scan Different Handle" : "Initialize GitHub Scan"}</CardTitle>
+              <CardDescription>
+                We'll analyze your public repositories, commit patterns, and technology choices to determine your engineering profile.
+              </CardDescription>
+            </div>
+            {isEditingUsername && (
+              <Button variant="ghost" size="sm" onClick={() => setIsEditingUsername(false)}>
+                Cancel
+              </Button>
+            )}
           </CardHeader>
           <CardContent>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex gap-4">
               <div className="flex-1">
                 <Input
                   placeholder="GitHub Username"
+                  defaultValue={reportToDisplay?.githubUsername || ""}
                   {...form.register("username")}
                   className="font-mono"
                 />
@@ -272,7 +297,7 @@ export default function GithubDNA() {
                 )}
               </div>
               <Button type="submit" disabled={analyze.isPending}>
-                {analyze.isPending ? "Starting..." : "Analyze"}
+                {analyze.isPending ? "Starting..." : "Analyze Handle"}
               </Button>
             </form>
           </CardContent>
@@ -297,7 +322,7 @@ export default function GithubDNA() {
         </Card>
       )}
 
-      {reportToDisplay && reportToDisplay.status === "completed" && meta && (
+      {!isAnalyzing && !isEditingUsername && reportToDisplay && reportToDisplay.status === "completed" && meta && (
         <motion.div
           ref={reportRef}
           initial={{ opacity: 0, y: 20 }}
@@ -312,11 +337,14 @@ export default function GithubDNA() {
                 <div className="text-5xl font-bold tracking-tighter text-primary mb-2">
                   <AnimatedCounter value={reportToDisplay.overallScore || 0} />
                 </div>
-                <Badge variant="outline" className="font-mono bg-background">
+                <Badge variant="outline" className="font-mono bg-background mb-2">
                   {reportToDisplay.percentile !== null && reportToDisplay.percentile !== undefined
                     ? `Top ${100 - reportToDisplay.percentile}%`
                     : "Cohort < 20"}
                 </Badge>
+                <div className="text-[11px] font-mono text-muted-foreground">
+                  Refreshed {new Date(reportToDisplay.updatedAt || reportToDisplay.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </div>
               </CardContent>
             </Card>
 
@@ -414,7 +442,7 @@ export default function GithubDNA() {
                 </div>
               </div>
               <Button
-                onClick={handleRefreshScore}
+                onClick={() => handleRefreshScore()}
                 disabled={isAnalyzing}
                 className="shrink-0 gap-2 font-semibold shadow-md"
               >
