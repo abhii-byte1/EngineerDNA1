@@ -1,7 +1,7 @@
 import * as React from "react"
 import { Link } from "wouter"
 import { motion } from "framer-motion"
-import { ArrowRight, BookOpen, Code2, Database, FileText, GitBranch, Github, Globe, Layers, Map as MapIcon, MessageSquare, Terminal, Zap } from "lucide-react"
+import { ArrowRight, BookOpen, Code2, Database, FileText, GitBranch, Github, Globe, Layers, Map as MapIcon, MessageSquare, Terminal, UserPlus, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { SpotlightCard } from "@/components/ui/spotlight"
 import { BorderBeam } from "@/components/ui/border-beam"
@@ -16,30 +16,48 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/30">
       {/* Navbar */}
-      <header className="fixed top-0 inset-x-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
-        <div className="container mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2 font-mono font-bold text-lg tracking-tighter">
-            <div className="w-6 h-6 rounded bg-primary text-primary-foreground flex items-center justify-center text-xs">
+      <header className="fixed top-0 inset-x-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+        <div className="container mx-auto px-6 h-20 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5 font-mono font-bold text-lg tracking-tighter hover:opacity-90 transition-opacity">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-500 text-white flex items-center justify-center text-xs font-extrabold shadow-md shadow-blue-500/20">
               DNA
             </div>
-            EngineerDNA
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Sign In
+            <span className="text-foreground text-xl font-bold tracking-tight">EngineerDNA</span>
+          </Link>
+
+          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
+            <a href="#features" className="hover:text-foreground transition-colors">Features</a>
+            <a href="#how-it-works" className="hover:text-foreground transition-colors">How it Works</a>
+            <a href="#privacy" className="hover:text-foreground transition-colors">Privacy</a>
+            <Link href="/roast" className="text-amber-400 hover:text-amber-300 font-mono text-xs uppercase tracking-wider flex items-center gap-1 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20">
+              Roast 🔥
             </Link>
-            <Link href="/login" className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-              New here? Get your free analysis →
+          </nav>
+
+          <div className="flex items-center gap-3.5">
+            <Link href="/login">
+              <Button
+                variant="outline"
+                className="h-12 px-6 rounded-xl bg-slate-900/60 backdrop-blur-md border-blue-500/30 text-foreground font-semibold text-sm hover:bg-slate-800/80 hover:border-blue-400/60 hover:shadow-lg hover:shadow-blue-500/20 hover:-translate-y-0.5 transition-all duration-200 group"
+              >
+                Sign In
+                <ArrowRight className="w-4 h-4 ml-2 text-blue-400 group-hover:translate-x-0.5 transition-transform" />
+              </Button>
             </Link>
-            <Link href="/roast">
-              <Button size="sm" className="font-mono text-xs uppercase tracking-wider">Roast My GitHub 🔥</Button>
+            <Link href="/login">
+              <Button
+                className="h-12 px-6 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-semibold text-sm shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all duration-200 group"
+              >
+                Get Started
+                <UserPlus className="w-4 h-4 ml-2 group-hover:translate-x-0.5 transition-transform" />
+              </Button>
             </Link>
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
+      <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden" id="features">
         <AnimatedGridBg />
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-background to-background" />
@@ -54,31 +72,57 @@ export default function Home() {
             transition={{ duration: 0.5, ease: "easeOut" }}
             className="flex-1 max-w-2xl"
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-mono mb-6 border border-primary/20">
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              OS For Engineering Growth
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 text-blue-400 text-xs font-mono mb-6 border border-blue-500/20 shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+              DSA For Engineering Growth
             </div>
             <h1 className="text-5xl md:text-7xl font-bold tracking-tighter leading-[1.1] mb-6">
               Decode Your <br/>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">
                 Engineering DNA.
               </span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-lg leading-relaxed">
               Stop guessing why you're not growing. AI-powered analysis of your GitHub and resume to tell you exactly where you're weak, where you're strong, and what to build next.
             </p>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <Link href="/roast">
-                <div className="relative group rounded-lg overflow-hidden">
-                  <BorderBeam size={120} duration={6} colorFrom="#10b981" colorTo="#06b6d4" />
-                  <Button size="lg" className="font-mono text-sm uppercase tracking-wider w-full sm:w-auto relative z-10">
-                    Roast My GitHub 🔥 <ArrowRight className="ml-2 w-4 h-4" />
-                  </Button>
-                </div>
+            
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-8">
+              <Link href="/login">
+                <Button
+                  size="lg"
+                  className="h-14 px-8 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-semibold text-base shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/45 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center group w-full sm:w-auto"
+                >
+                  <Github className="w-5 h-5 mr-2.5" />
+                  Get Started with GitHub
+                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-0.5 transition-transform" />
+                </Button>
               </Link>
-              <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                or sign in for full tracking →
+
+              <Link href="/login">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="h-14 px-8 rounded-xl bg-slate-900/60 backdrop-blur-md border-blue-500/30 text-foreground font-semibold text-base hover:bg-slate-800/80 hover:border-blue-400/60 hover:shadow-lg hover:shadow-blue-500/20 hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center group w-full sm:w-auto"
+                >
+                  Sign In
+                  <ArrowRight className="w-4 h-4 ml-2 text-blue-400 group-hover:translate-x-0.5 transition-transform" />
+                </Button>
               </Link>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-6 text-xs font-medium text-muted-foreground pt-2">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                <span>AI-Powered Insights</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Globe className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+                <span>Track Real Progress</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Terminal className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                <span>100% Secure & Private</span>
+              </div>
             </div>
           </motion.div>
 
@@ -96,18 +140,18 @@ export default function Home() {
               <div className="absolute inset-0 bg-gradient-to-tr from-background/80 via-transparent to-transparent pointer-events-none" />
               
               {/* Overlay UI elements */}
-              <div className="absolute bottom-6 left-6 right-6 p-4 rounded-xl glass-panel text-sm font-mono text-muted-foreground backdrop-blur-2xl">
+              <div className="absolute bottom-6 left-6 right-6 p-4 rounded-xl glass-panel text-sm font-mono text-muted-foreground backdrop-blur-2xl border border-blue-500/20 bg-slate-950/60 shadow-xl">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-foreground font-bold">DNA_MATCH</span>
-                  <span className="text-primary">98.4%</span>
+                  <span className="text-blue-400 font-bold">88.4%</span>
                 </div>
-                <div className="w-full h-1 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-primary w-[98.4%]" />
+                <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 w-[88.4%]" />
                 </div>
                 <div className="mt-4 flex gap-4 text-xs">
-                  <span className="flex items-center gap-1"><GitBranch className="w-3 h-3 text-secondary"/> Arch</span>
-                  <span className="flex items-center gap-1"><Terminal className="w-3 h-3 text-accent"/> Logic</span>
-                  <span className="flex items-center gap-1"><Zap className="w-3 h-3 text-primary"/> Perf</span>
+                  <span className="flex items-center gap-1.5 text-blue-400"><GitBranch className="w-3.5 h-3.5"/> Arch</span>
+                  <span className="flex items-center gap-1.5 text-indigo-400"><Terminal className="w-3.5 h-3.5"/> Logic</span>
+                  <span className="flex items-center gap-1.5 text-purple-400"><Zap className="w-3.5 h-3.5"/> Perf</span>
                 </div>
               </div>
             </div>
